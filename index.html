@@ -1,0 +1,286 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>ODOT Camera Dashboard + Weather</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icon.png" />
+    <link rel="stylesheet" href="./app.css" />
+  <style>
+  .bootwarn{position:fixed;inset:12px;z-index:9999;max-width:760px;margin:auto;background:rgba(15,20,32,.92);border:1px solid rgba(255,255,255,.12);border-radius:16px;box-shadow:0 16px 40px rgba(0,0,0,.55);padding:14px;backdrop-filter:blur(10px)}
+  .bootwarn h2{margin:0 0 8px;font-size:1.05rem}
+  .bootwarn p{margin:8px 0;color:rgba(255,255,255,.75);line-height:1.35}
+  .bootwarn code{background:rgba(0,0,0,.35);padding:2px 6px;border-radius:8px}
+  .bootwarn .cmd{display:block;margin-top:8px}
+</style>
+<script>
+  // Boot detection: show a helpful message only if the module app fails to start.
+  window.__ODOT_APP_BOOTED = false;
+  window.__ODOT_APP_BOOT_ERROR = "";
+  window.__ODOT_APP_BOOT_ERROR_LOC = "";
+
+  function __odotShowBootWarning() {
+    if (window.__ODOT_APP_BOOTED) return;
+    var el = document.getElementById('boot-warning');
+    if (!el) return;
+    var errEl = document.getElementById('boot-warning-error');
+    if (errEl && window.__ODOT_APP_BOOT_ERROR) {
+      var loc = window.__ODOT_APP_BOOT_ERROR_LOC ? ('(' + window.__ODOT_APP_BOOT_ERROR_LOC + ') ') : '';
+      errEl.textContent = loc + window.__ODOT_APP_BOOT_ERROR;
+    }
+    el.hidden = false;
+  }
+
+  window.addEventListener('odot-app-booted', function () {
+    var el = document.getElementById('boot-warning');
+    if (el) el.hidden = true;
+  });
+
+  window.addEventListener('error', function (ev) {
+    try {
+      window.__ODOT_APP_BOOT_ERROR = (ev && ev.message) ? String(ev.message) : 'Script error';
+      try {
+        var f = (ev && ev.filename) ? String(ev.filename) : '';
+        var l = (ev && ev.lineno) ? String(ev.lineno) : '';
+        var c = (ev && ev.colno) ? String(ev.colno) : '';
+        window.__ODOT_APP_BOOT_ERROR_LOC = (f || l || c) ? (f + (l ? (':' + l) : '') + (c ? (':' + c) : '')) : '';
+      } catch {}
+    } catch {}
+  });
+
+  window.addEventListener('unhandledrejection', function (ev) {
+    try {
+      var r = ev && ev.reason;
+      window.__ODOT_APP_BOOT_ERROR = (r && r.message) ? String(r.message) : String(r || 'Unhandled rejection');
+      try { window.__ODOT_APP_BOOT_ERROR_LOC = ''; } catch {}
+    } catch {}
+  });
+
+  // Give module loading time (slow disk/OneDrive/cold cache). Only warn if still not booted.
+  setTimeout(__odotShowBootWarning, 2500);
+</script>
+
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <div class="topbar__title">
+          <h1>ODOT Cameras</h1>
+          <div class="subtitle" id="subtitle">Akron / Cleveland area</div>
+        </div>
+        <div class="topbar__actions">
+          <button class="pill" id="btn-alt-all" type="button" aria-pressed="false">Alt all</button>
+          <button class="pill" id="btn-pause" type="button" aria-pressed="false">Pause</button>
+          <button class="pill" id="btn-settings" type="button">Settings</button>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="main">
+          <div class="statusrow">
+            <div class="statusrow__left">
+              <span class="badge" id="badge-refresh">Refreshing every 5s</span>
+              <span class="badge badge--muted" id="badge-last">Last update: -</span>
+            </div>
+            <div class="statusrow__right">
+              <button class="ghost" id="btn-refresh-now" type="button">Refresh now</button>
+            </div>
+          </div>
+
+          <div id="cam-grid" class="cam-grid" aria-live="polite"></div>
+
+<div class="panel camstats" aria-label="Camera status">
+  <div class="panel__title">
+    <div>
+      <div class="panel__h">Camera status</div>
+      <div class="panel__sub" id="camstatus-sub">-</div>
+    </div>
+    <button class="ghost" id="btn-retry-failed" type="button">Retry failed</button>
+  </div>
+  <div class="panel__body" id="camstatus-body"></div>
+</div>
+        </section>
+
+        <aside class="sidebar" aria-label="Weather sidebar">
+          <div class="panel">
+            <div class="panel__title">
+              <div>
+                <div class="panel__h" id="weather-header">Weather</div>
+                <div class="panel__sub" id="weather-sub">Not configured</div>
+              </div>
+              <button class="ghost" id="btn-weather-now" type="button">Update</button>
+            </div>
+            <div id="weather-current" class="panel__body">
+              <div class="empty">Enter an OpenWeather API key in Settings.</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__title">
+              <div class="panel__h">Pain / Migraine risk</div>
+              <div class="panel__sub" id="pain-level">-</div>
+            </div>
+            <div id="pain-box" class="panel__body"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__title">
+              <div class="panel__h">Driving risk</div>
+              <div class="panel__sub" id="risk-level">-</div>
+            </div>
+            <div id="risk-box" class="panel__body"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__title">
+              <div>
+                <div class="panel__h">Traffic alerts</div>
+                <div class="panel__sub" id="traffic-sub">Not configured</div>
+              </div>
+              <button class="ghost" id="btn-traffic-now" type="button">Update</button>
+            </div>
+            <div id="traffic-box" class="panel__body">
+              <div class="empty">Add your OHGO API key in Settings to see incidents near you.</div>
+            </div>
+          </div>
+
+          <footer class="footer">
+            <div class="footer__small">
+              Cameras refresh by cache-busting URLs. Weather uses OpenWeather Current Weather.
+            </div>
+          </footer>
+        </aside>
+      </main>
+    </div>
+
+    <dialog id="settings-dialog" class="dialog">
+      <form method="dialog" class="dialog__content" id="settings-form">
+        <div class="dialog__header">
+          <div>
+            <div class="dialog__h">Settings</div>
+            <div class="dialog__sub">Stored locally in your browser (localStorage).</div>
+          </div>
+          <button class="iconbtn" value="cancel" aria-label="Close" type="submit">X</button>
+        </div>
+
+        <div class="dialog__grid">
+          <label class="field">
+            <span class="field__label">OpenWeather API key</span>
+            <input class="field__input" id="inp-api-key" type="password" autocomplete="off" placeholder="Paste key..." />
+                        <span class="field__help">Static apps cannot keep secrets. If you want the key hidden, run a small server proxy.</span>
+          </label>
+
+          <label class="field">
+            <span class="field__label">OHGO API key (traffic incidents)</span>
+            <input class="field__input" id="inp-ohgo-key" type="password" autocomplete="off" placeholder="Paste key..." />
+            <span class="field__help">Register for a free key at publicapi.ohgo.com. Key is stored locally in your browser.</span>
+          </label>
+
+          <div class="row">
+            <label class="toggle">
+              <input id="chk-traffic-enabled" type="checkbox" />
+              <span>Enable traffic alerts</span>
+            </label>
+            <label class="toggle">
+              <input id="chk-traffic-slowdowns" type="checkbox" />
+              <span>Include dangerous slowdowns</span>
+            </label>
+          </div>
+
+          <div class="row row--2">
+            <label class="field">
+              <span class="field__label">Alert radius (miles)</span>
+              <input class="field__input" id="inp-traffic-radius" type="number" min="1" max="200" step="1" />
+            </label>
+            <label class="field">
+              <span class="field__label">Alert refresh (seconds)</span>
+              <input class="field__input" id="inp-traffic-seconds" type="number" min="15" max="600" step="5" />
+            </label>
+          </div>
+
+          <div class="row">
+            <label class="toggle">
+              <input id="chk-traffic-notify" type="checkbox" />
+              <span>Browser notifications for new alerts</span>
+            </label>
+          </div>
+          <div class="row">
+            <label class="toggle">
+              <input id="chk-geolocate" type="checkbox" />
+              <span>Use geolocation</span>
+            </label>
+            <button class="ghost" id="btn-use-fallback" type="button">Use Akron fallback</button>
+          </div>
+
+          <div class="row row--2">
+            <label class="field">
+              <span class="field__label">Latitude</span>
+              <input class="field__input" id="inp-lat" inputmode="decimal" />
+            </label>
+            <label class="field">
+              <span class="field__label">Longitude</span>
+              <input class="field__input" id="inp-lon" inputmode="decimal" />
+            </label>
+          </div>
+
+          <label class="field">
+            <span class="field__label">Camera refresh interval (seconds)</span>
+            <input class="field__input" id="inp-refresh-seconds" type="number" min="5" max="60" step="1" />
+          </label>
+
+          <label class="field">
+            <span class="field__label">Weather refresh interval (minutes)</span>
+            <input class="field__input" id="inp-weather-minutes" type="number" min="2" max="60" step="1" />
+          </label>
+
+          <div class="field">
+            <span class="field__label">Cameras</span>
+            <div class="field__help">Edit the list below (JSON). Changes apply immediately.</div>
+            <textarea class="field__textarea" id="inp-cameras" rows="10" spellcheck="false"></textarea>
+          </div>
+        </div>
+
+        <div class="dialog__footer">
+          <button class="pill" id="btn-save" value="save" type="submit">Save</button>
+          <button class="pill pill--muted" id="btn-reset" type="button">Reset to defaults</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="viewer-dialog" class="dialog dialog--viewer">
+      <form method="dialog" class="dialog__content viewer" id="viewer-form">
+        <div class="viewer__top">
+          <div class="viewer__meta">
+            <div class="viewer__h" id="viewer-title">-</div>
+            <div class="viewer__sub" id="viewer-sub">-</div>
+          </div>
+          <div class="viewer__actions">
+            <button class="pill" id="btn-viewer-alt" type="button" aria-pressed="false">Alt</button>
+            <button class="iconbtn" value="close" aria-label="Close" type="submit">X</button>
+          </div>
+        </div>
+        <div class="viewer__controls">
+          <button class="ghost" id="btn-zoom-out" type="button" aria-label="Zoom out">-</button>
+          <input id="rng-zoom" type="range" min="1" max="3" step="0.1" value="1" aria-label="Zoom" />
+          <button class="ghost" id="btn-zoom-in" type="button" aria-label="Zoom in">+</button>
+          <button class="ghost" id="btn-zoom-reset" type="button">100%</button>
+          <div class="viewer__hint">Drag to pan</div>
+        </div>
+        <div class="viewer__imgwrap">
+          <img id="viewer-img" alt="" />
+        </div>
+      </form>
+    </dialog>
+
+    <script defer src="./bundle.js"></script>
+  <div id="boot-warning" class="bootwarn" hidden>
+  <h2>App didn't start</h2>
+  <p id="boot-warning-error" style="margin:8px 0;color:rgba(255,255,255,.75)"></p>
+  <p>This usually happens if you opened <code>index.html</code> directly from the filesystem. Modern browsers block ES module imports on <code>file://</code>.</p>
+  <p>Run the local server from the <code>odot-dashboard</code> folder, then open <code>http://localhost:5173</code>:</p>
+  <code class="cmd">powershell -ExecutionPolicy Bypass -File .\serve.ps1 -Port 5173</code>
+</div>
+
+</html>
+

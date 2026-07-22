@@ -1,0 +1,29 @@
+x-casaos:
+  architectures:
+    - amd64
+    - arm64
+  main: odot-dashboard
+  author: brgjr
+  category: Utility
+  description:
+    en_us: ODOT camera dashboard with weather sidebar
+  developer: brgjr
+  tagline:
+    en_us: ODOT camera dashboard
+  title:
+    en_us: ODOT Dashboard
+  port_map: "5173"
+
+services:
+  odot-dashboard:
+    image: brgjr10/odot-dashboard:latest
+    container_name: odot-dashboard
+    ports:
+      - "5173:5173"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5173/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

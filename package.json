@@ -1,0 +1,33 @@
+{
+  "name": "odot-dashboard",
+  "productName": "ODOT Dashboard",
+  "version": "1.0.0",
+  "description": "ODOT camera dashboard turned into a desktop app",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "package": "electron-builder --win --x64"
+  },
+  "devDependencies": {
+    "electron": "^26.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "build": {
+    "appId": "com.odot.dashboard",
+    "files": [
+      "**/*",
+      "!dist/**/*",
+      "!node_modules/**/*",
+      "!package-lock.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "icon.png"
+    }
+  }
+}
