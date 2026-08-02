@@ -1,5 +1,10 @@
 ﻿# ODOT Camera Dashboard + Weather
 
+[![Docker Pulls](https://img.shields.io/docker/pulls/brgjr10/odot-dashboard?logo=docker&style=flat)](https://hub.docker.com/repository/docker/brgjr10/odot-dashboard)
+[![Docker Image](https://img.shields.io/docker/v/brgjr10/odot-dashboard/latest?logo=docker&style=flat)](https://hub.docker.com/repository/docker/brgjr10/odot-dashboard/general)
+[![GitHub release](https://img.shields.io/github/v/release/brgjr10/odot-dashboard?logo=github&style=flat)](https://github.com/brgjr10/odot-dashboard/releases)
+[![GitHub Packages](https://img.shields.io/badge/ghcr.io-odot--dashboard-blue?logo=github&style=flat)](https://github.com/brgjr10/odot-dashboard/packages)
+
 Interactive single-page app version of your Tampermonkey dashboard:
 
 - ODOT camera tiles with per-camera ALT and a global Alt all
