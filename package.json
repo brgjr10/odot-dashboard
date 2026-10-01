@@ -6,11 +6,16 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "build": "vite build",
+    "test": "vitest run",
+    "test:python": "python -m compileall -q run_server.py && python -m unittest discover -s tests -p test_*.py",
     "package": "electron-builder --win --x64"
   },
   "devDependencies": {
-    "electron": "^26.0.0",
-    "electron-builder": "^24.0.0"
+    "electron": "44.5.1",
+    "electron-builder": "24.13.3",
+    "vite": "^7.3.6",
+    "vitest": "^3.2.7"
   },
   "build": {
     "appId": "com.odot.dashboard",
@@ -18,6 +23,9 @@
       "**/*",
       "!dist/**/*",
       "!node_modules/**/*",
+      "!src/**/*",
+      "!tests/**/*",
+      "!vite.config.js",
       "!package-lock.json"
     ],
     "directories": {
