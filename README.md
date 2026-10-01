@@ -14,6 +14,8 @@ Interactive single-page app version of your Tampermonkey dashboard:
 - Traffic alerts (OHGO Public API)
 - Settings (API keys, coords/geolocation, refresh intervals, camera list)
 
+<img width="1241" height="833" alt="image" src="https://github.com/user-attachments/assets/0ba9bc80-fbe2-4043-8982-9761de58232b" />
+
 ## Quick start (recommended)
 
 Run a local server from the `odot-dashboard` folder:
