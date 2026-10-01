@@ -1,0 +1,21 @@
+# Without this, `COPY . /app` baked 418 MB of node_modules and the full .git
+# history (including .git/config) into a publicly pullable image.
+.git/
+.github/
+node_modules/
+dist/
+src/
+tests/
+__pycache__/
+.qa-tmp/
+.vscode/
+*.log
+*.md
+!README.md
+.env
+.env.*
+*.pem
+*.key
+package-lock.json
+project.json
+vite.config.js

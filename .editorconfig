@@ -1,0 +1,16 @@
+# run_server.py lost its shebang to a UTF-8 BOM and app.js/cameras.js gained
+# literal \n sequences; both came from editor defaults on Windows.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{js,json,css,html,yml,yaml,py}]
+indent_style = space
+indent_size = 2
+
+[*.py]
+indent_size = 4

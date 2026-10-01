@@ -1,0 +1,5 @@
+# Line endings are part of the build contract: bundle.js is generated output and
+# run_server.py needs a BOM-free shebang to be executable on POSIX.
+* text=auto eol=lf
+*.png binary
+*.ico binary
