@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="dark" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://itscameras.dot.state.oh.us https://openweathermap.org; connect-src 'self' https://api.openweathermap.org https://publicapi.ohgo.com; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+    />
     <title>ODOT Camera Dashboard + Weather</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./icon.png" />
@@ -58,9 +62,10 @@
     } catch {}
   });
 
-  // Give module loading time (slow disk/OneDrive/cold cache). Only warn if still not booted.
+  // Give the bundle time to load (slow disk/OneDrive/cold cache). Only warn if still not booted.
   setTimeout(__odotShowBootWarning, 2500);
 </script>
+  </head>
 
   <body>
     <div id="app">
@@ -226,7 +231,7 @@
 
           <label class="field">
             <span class="field__label">Camera refresh interval (seconds)</span>
-            <input class="field__input" id="inp-refresh-seconds" type="number" min="5" max="60" step="1" />
+            <input class="field__input" id="inp-refresh-seconds" type="number" min="10" max="60" step="1" />
           </label>
 
           <label class="field">
@@ -268,7 +273,7 @@
           <div class="viewer__hint">Drag to pan</div>
         </div>
         <div class="viewer__imgwrap">
-          <img id="viewer-img" alt="" />
+          <img id="viewer-img" alt="Camera viewer" />
         </div>
       </form>
     </dialog>
@@ -277,10 +282,12 @@
   <div id="boot-warning" class="bootwarn" hidden>
   <h2>App didn't start</h2>
   <p id="boot-warning-error" style="margin:8px 0;color:rgba(255,255,255,.75)"></p>
-  <p>This usually happens if you opened <code>index.html</code> directly from the filesystem. Modern browsers block ES module imports on <code>file://</code>.</p>
+  <p>The dashboard is a single script, <code>bundle.js</code>. If it did not load, the usual cause is that the file is missing (build it with <code>npm run build</code>) or that a stale copy is being served.</p>
   <p>Run the local server from the <code>odot-dashboard</code> folder, then open <code>http://localhost:5173</code>:</p>
   <code class="cmd">powershell -ExecutionPolicy Bypass -File .\serve.ps1 -Port 5173</code>
 </div>
+
+  </body>
 
 </html>
 
