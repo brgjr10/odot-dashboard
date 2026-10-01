@@ -36,6 +36,25 @@ Then open:
 
 - http://localhost:5173
 
+`run_server.py` binds `127.0.0.1` by default and serves an allow-list of dashboard
+files only (`.git`, `.env`, `node_modules`, lockfiles and anything else answer 403).
+Pass `--host 0.0.0.0` if you deliberately want it on the LAN.
+
+## Working on the UI
+
+`index.html` loads one script, `bundle.js`, and `bundle.js` is generated output.
+
+```powershell
+npm install
+npm run build   # rebuilds bundle.js from src/app.js
+npm test        # vitest: bundle-freshness guard + served-surface guard
+npm run test:python
+```
+
+Edit `src/app.js`, never `bundle.js`. `tests/bundle-drift.test.js` fails if the
+committed `bundle.js` no longer contains the source symbols, so a stale build
+cannot be committed unnoticed.
+
 ## Run as a desktop app
 
 This repo can also be packaged as a Windows executable using Electron.
@@ -45,8 +64,12 @@ This repo can also be packaged as a Windows executable using Electron.
 
 ```powershell
 npm install
+npm run build
 npm run start
 ```
+
+`main.js` calls `app.disableHardwareAcceleration()`, so the app also runs on
+headless hosts, VMs and RDP sessions that have no usable GPU.
 
 3. To create a distributable EXE installer:
 

@@ -17,6 +17,7 @@ x-casaos:
 services:
   odot-dashboard:
     image: brgjr10/odot-dashboard:latest
+    build: .
     container_name: odot-dashboard
     ports:
       - "5173:5173"
