@@ -26,7 +26,15 @@
       "!src/**/*",
       "!tests/**/*",
       "!vite.config.js",
-      "!package-lock.json"
+      "!package-lock.json",
+      "!project.json",
+      "!.github/**/*",
+      "!Dockerfile",
+      "!docker-compose.yml",
+      "!*.py",
+      "!.qa-tmp/**/*",
+      "!.env*",
+      "!__pycache__/**/*"
     ],
     "directories": {
       "output": "dist"
