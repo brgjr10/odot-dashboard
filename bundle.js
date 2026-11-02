@@ -1142,6 +1142,7 @@
       };
     }
     const viewer = createViewer({ getSettings: () => settings });
+    window.__ohgoView = (url, loc) => viewer.open({ src: url, alt: url, label: loc, altLabel: loc }, false);
     const cameras = createCameraDashboard({
       mountEl: els.camGrid || document.createElement("div"),
       viewer,
@@ -1331,7 +1332,7 @@
           if (!url) continue;
           const icon = window.L.divIcon({ className: "ohgo-cam-pin", html: "📷", iconSize: [24, 24], iconAnchor: [12, 12] });
           const m = window.L.marker([c.latitude, c.longitude], { icon }).addTo(map);
-          m.bindPopup(`<img src="${url}" style="max-width:200px"><br>${c.location}<br><a href="${url}" target="_blank">View</a>`);
+          m.bindPopup(`<img src="${url}" style="max-width:200px"><br>${c.location}<br><button onclick="window.__ohgoView && window.__ohgoView('${url}','${c.location.replace(/'/g, "")}')">View</button>`);
         }
       });
     }
@@ -1360,7 +1361,7 @@
           const btn = document.createElement("button");
           btn.className = "ghost";
           btn.textContent = "View";
-          btn.addEventListener("click", () => window.open(url, "_blank"));
+          btn.addEventListener("click", () => viewer.open({ src: url, alt: url, label: c.location, altLabel: c.location }, false));
           card.appendChild(img);
           card.appendChild(label);
           card.appendChild(btn);
