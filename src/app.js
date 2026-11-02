@@ -1650,7 +1650,7 @@ const res = await fetchWithTimeout(
   }
 
   let ohgoCamsLoaded = [];
-  let viewMode = "all";
+  let viewMode = localStorage.getItem("ohgoViewMode") || "all";
   const mapMarkers = new Map();
   const staleIds = new Set();
   const starred = new Set(JSON.parse(localStorage.getItem("ohgoStarred") || "[]"));
@@ -1697,8 +1697,10 @@ const res = await fetchWithTimeout(
     });
   }
   if (els.viewMode) {
+    els.viewMode.value = viewMode;
     els.viewMode.addEventListener("change", () => {
       viewMode = els.viewMode.value;
+      localStorage.setItem("ohgoViewMode", viewMode);
       applyViewMode();
     });
   }

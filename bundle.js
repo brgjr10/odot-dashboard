@@ -1388,7 +1388,7 @@
       });
     }
     let ohgoCamsLoaded = [];
-    let viewMode = "all";
+    let viewMode = localStorage.getItem("ohgoViewMode") || "all";
     const mapMarkers = /* @__PURE__ */ new Map();
     const staleIds = /* @__PURE__ */ new Set();
     const starred = new Set(JSON.parse(localStorage.getItem("ohgoStarred") || "[]"));
@@ -1443,8 +1443,10 @@
       });
     }
     if (els.viewMode) {
+      els.viewMode.value = viewMode;
       els.viewMode.addEventListener("change", () => {
         viewMode = els.viewMode.value;
+        localStorage.setItem("ohgoViewMode", viewMode);
         applyViewMode();
       });
     }
