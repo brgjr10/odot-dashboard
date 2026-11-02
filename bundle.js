@@ -1331,7 +1331,7 @@
           if (!url) continue;
           const icon = window.L.divIcon({ className: "ohgo-cam-pin", html: "📷", iconSize: [24, 24], iconAnchor: [12, 12] });
           const m = window.L.marker([c.latitude, c.longitude], { icon }).addTo(map);
-          m.bindPopup(`<img src="${url}" style="max-width:200px"><br>${c.location}`);
+          m.bindPopup(`<img src="${url}" style="max-width:200px"><br>${c.location}<br><a href="${url}" target="_blank">View</a>`);
         }
       });
     }
@@ -1357,8 +1357,13 @@
           const label = document.createElement("div");
           label.className = "cam-card__label";
           label.textContent = c.location;
+          const btn = document.createElement("button");
+          btn.className = "ghost";
+          btn.textContent = "View";
+          btn.addEventListener("click", () => window.open(url, "_blank"));
           card.appendChild(img);
           card.appendChild(label);
+          card.appendChild(btn);
           els.ohgoCamGrid.appendChild(card);
         }
         els.ohgoCamSub.textContent = `${cams.length} cameras`;
