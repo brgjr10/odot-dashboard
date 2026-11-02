@@ -1002,6 +1002,7 @@
       btnOhgoCams: document.getElementById("btn-ohgo-cams"),
       ohgoMap: document.getElementById("ohgo-map"),
       btnOhgoView: document.getElementById("btn-ohgo-view"),
+      btnOhgoSat: document.getElementById("btn-ohgo-sat"),
       ohgoMap: document.getElementById("ohgo-map"),
       btnOhgoView: document.getElementById("btn-ohgo-view"),
       camStatusSub: document.getElementById("camstatus-sub"),
@@ -1323,6 +1324,20 @@
           els.ohgoMap._leaflet = map2;
         }
         const map = els.ohgoMap._leaflet;
+        if (els.btnOhgoSat) {
+          els.btnOhgoSat.style.display = "";
+          els.btnOhgoSat.onclick = () => {
+            const sat = els.btnOhgoSat.textContent === "Satellite";
+            map.eachLayer((l) => {
+              if (!l._url) return;
+              map.removeLayer(l);
+            });
+            const url = sat ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+            const opts = sat ? { maxZoom: 19, attribution: "Tiles © Esri" } : { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors", referrerPolicy: "origin-when-cross-origin" };
+            window.L.tileLayer(url, opts).addTo(map);
+            els.btnOhgoSat.textContent = sat ? "Street" : "Satellite";
+          };
+        }
         map.eachLayer((l) => {
           if (l instanceof window.L.Marker) map.removeLayer(l);
         });
