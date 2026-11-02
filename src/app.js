@@ -1589,7 +1589,7 @@ const res = await fetchWithTimeout(
       }
       if (!els.ohgoMap._leaflet) {
         const map = window.L.map(els.ohgoMap).setView([FALLBACK_COORDS.lat, FALLBACK_COORDS.lon], 10);
-        window.L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", { maxZoom: 19, attribution: '© CARTO' }).addTo(map);
+        window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
         els.ohgoMap._leaflet = map;
       }
       const map = els.ohgoMap._leaflet;

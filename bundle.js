@@ -1314,7 +1314,7 @@
         }
         if (!els.ohgoMap._leaflet) {
           const map2 = window.L.map(els.ohgoMap).setView([FALLBACK_COORDS.lat, FALLBACK_COORDS.lon], 10);
-          window.L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", { maxZoom: 19, attribution: "© CARTO" }).addTo(map2);
+          window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map2);
           els.ohgoMap._leaflet = map2;
         }
         const map = els.ohgoMap._leaflet;
