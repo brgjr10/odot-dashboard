@@ -1077,10 +1077,13 @@
         imgWrap.scrollTop = 0;
       }
       btnAlt.addEventListener("click", () => {
-        if (!state) return;
-        state.usingAlt = !state.usingAlt;
-        btnAlt.setAttribute("aria-pressed", String(state.usingAlt));
-        render();
+        if (!state || !state.camera || !state.camera.id) return;
+        const id = state.camera.id;
+        const starredSet = new Set(JSON.parse(localStorage.getItem("ohgoStarred") || "[]"));
+        if (starredSet.has(id)) starredSet.delete(id);
+        else starredSet.add(id);
+        localStorage.setItem("ohgoStarred", JSON.stringify([...starredSet]));
+        btnAlt.textContent = starredSet.has(id) ? "★" : "☆";
       });
       if (btnZoomOut) btnZoomOut.addEventListener("click", () => setZoom(zoom - 0.25));
       if (btnZoomIn) btnZoomIn.addEventListener("click", () => setZoom(zoom + 0.25));
@@ -1126,6 +1129,8 @@
         const usingAlt = state.usingAlt;
         title.textContent = usingAlt ? camera.altLabel : camera.label;
         sub.textContent = usingAlt ? "Alternate view" : "Primary view";
+        const starredSet = new Set(JSON.parse(localStorage.getItem("ohgoStarred") || "[]"));
+        btnAlt.textContent = camera && camera.id && starredSet.has(camera.id) ? "★" : "☆";
         img.alt = title.textContent;
         img.src = `${usingAlt ? camera.alt : camera.src}?t=${Date.now()}`;
       }
@@ -1143,7 +1148,7 @@
       };
     }
     const viewer = createViewer({ getSettings: () => settings });
-    window.__ohgoView = (url, loc) => viewer.open({ src: url, alt: url, label: loc, altLabel: loc }, false);
+    window.__ohgoView = (url, loc, id) => viewer.open({ id, src: url, alt: url, label: loc, altLabel: loc }, false);
     const cameras = createCameraDashboard({
       mountEl: els.camGrid || document.createElement("div"),
       viewer,
@@ -1347,7 +1352,7 @@
           if (!url) continue;
           const icon = window.L.divIcon({ className: "ohgo-cam-pin", html: starred.has(c.id) ? "📷⭐" : "📷", iconSize: [28, 24], iconAnchor: [14, 12] });
           const m = window.L.marker([c.latitude, c.longitude], { icon }).addTo(map);
-          m.bindPopup(`<img src="${url}" style="max-width:200px"><br>${c.location}<br><button onclick="window.__ohgoView && window.__ohgoView('${url}','${c.location.replace(/'/g, "")}')">View</button>`);
+          m.bindPopup(`<img src="${url}" style="max-width:200px"><br>${c.location}<br><button onclick="window.__ohgoView && window.__ohgoView('${url}','${c.location.replace(/'/g, "")}','${c.id}')">View</button>`);
         }
       });
     }
@@ -1379,7 +1384,7 @@
           const btn = document.createElement("button");
           btn.className = "ghost";
           btn.textContent = "View";
-          btn.addEventListener("click", () => viewer.open({ src: url, alt: url, label: c.location, altLabel: c.location }, false));
+          btn.addEventListener("click", () => viewer.open({ id: c.id, src: url, alt: url, label: c.location, altLabel: c.location }, false));
           const star = document.createElement("button");
           star.className = "ghost";
           star.textContent = starred.has(c.id) ? "★" : "☆";
