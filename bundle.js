@@ -367,11 +367,6 @@
         img.alt = camera.label;
         const actions = document.createElement("div");
         actions.className = "cam__actions";
-        const btnAlt = document.createElement("button");
-        btnAlt.className = "chip";
-        btnAlt.type = "button";
-        btnAlt.textContent = "ALT";
-        btnAlt.setAttribute("aria-pressed", "false");
         const btnView = document.createElement("button");
         btnView.className = "chip";
         btnView.type = "button";
@@ -383,7 +378,7 @@
         btnErr.textContent = "ERR";
         btnErr.title = "Image failed to load. Click to retry.";
         btnErr.hidden = true;
-        actions.append(btnAlt, btnView, btnErr);
+        actions.append(btnView, btnErr);
         const label = document.createElement("div");
         label.className = "cam__label";
         const labelLeft = document.createElement("div");
@@ -407,7 +402,6 @@
           btnAlt.setAttribute("aria-pressed", String(usingAlt));
           refresh();
         }
-        btnAlt.addEventListener("click", () => setAlt(!usingAlt));
         btnView.addEventListener("click", () => {
           viewer2.open(camera, usingAlt);
         });
@@ -1033,7 +1027,7 @@
       const img = document.getElementById("viewer-img");
       const title = document.getElementById("viewer-title");
       const sub = document.getElementById("viewer-sub");
-      const btnAlt = document.getElementById("btn-viewer-alt");
+      const btnAlt2 = document.getElementById("btn-viewer-alt");
       const btnZoomOut = document.getElementById("btn-zoom-out");
       const btnZoomIn = document.getElementById("btn-zoom-in");
       const btnZoomReset = document.getElementById("btn-zoom-reset");
@@ -1076,14 +1070,14 @@
         imgWrap.scrollLeft = 0;
         imgWrap.scrollTop = 0;
       }
-      btnAlt.addEventListener("click", () => {
+      btnAlt2.addEventListener("click", () => {
         if (!state || !state.camera || !state.camera.id) return;
         const id = state.camera.id;
         const starredSet = new Set(JSON.parse(localStorage.getItem("ohgoStarred") || "[]"));
         if (starredSet.has(id)) starredSet.delete(id);
         else starredSet.add(id);
         localStorage.setItem("ohgoStarred", JSON.stringify([...starredSet]));
-        btnAlt.textContent = starredSet.has(id) ? "★" : "☆";
+        btnAlt2.textContent = starredSet.has(id) ? "★" : "☆";
       });
       if (btnZoomOut) btnZoomOut.addEventListener("click", () => setZoom(zoom - 0.25));
       if (btnZoomIn) btnZoomIn.addEventListener("click", () => setZoom(zoom + 0.25));
@@ -1130,7 +1124,7 @@
         title.textContent = usingAlt ? camera.altLabel : camera.label;
         sub.textContent = usingAlt ? "Alternate view" : "Primary view";
         const starredSet = new Set(JSON.parse(localStorage.getItem("ohgoStarred") || "[]"));
-        btnAlt.textContent = camera && camera.id && starredSet.has(camera.id) ? "★" : "☆";
+        btnAlt2.textContent = camera && camera.id && starredSet.has(camera.id) ? "★" : "☆";
         img.alt = title.textContent;
         img.src = `${usingAlt ? camera.alt : camera.src}?t=${Date.now()}`;
       }
@@ -1138,7 +1132,7 @@
       return {
         open(camera, usingAlt) {
           state = { camera, usingAlt: Boolean(usingAlt) };
-          btnAlt.setAttribute("aria-pressed", String(state.usingAlt));
+          btnAlt2.setAttribute("aria-pressed", String(state.usingAlt));
           setZoom(1);
           resetPan();
           render();

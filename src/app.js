@@ -448,12 +448,6 @@ try {
       const actions = document.createElement("div");
       actions.className = "cam__actions";
 
-      const btnAlt = document.createElement("button");
-      btnAlt.className = "chip";
-      btnAlt.type = "button";
-      btnAlt.textContent = "ALT";
-      btnAlt.setAttribute("aria-pressed", "false");
-
       const btnView = document.createElement("button");
       btnView.className = "chip";
       btnView.type = "button";
@@ -467,7 +461,7 @@ try {
       btnErr.title = "Image failed to load. Click to retry.";
       btnErr.hidden = true;
 
-      actions.append(btnAlt, btnView, btnErr);
+      actions.append(btnView, btnErr);
 
       const label = document.createElement("div");
       label.className = "cam__label";
@@ -503,8 +497,6 @@ function refresh() {
         btnAlt.setAttribute("aria-pressed", String(usingAlt));
         refresh();
       }
-
-      btnAlt.addEventListener("click", () => setAlt(!usingAlt));
 
       btnView.addEventListener("click", () => {
         viewer.open(camera, usingAlt);
