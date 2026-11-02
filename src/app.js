@@ -1617,7 +1617,7 @@ const res = await fetchWithTimeout(
         const v = (c.cameraViews && c.cameraViews[0]) || {};
         const url = v.largeUrl || v.smallUrl;
         if (!url) continue;
-        const icon = window.L.divIcon({ className: "ohgo-cam-pin", html: "📷", iconSize: [24,24], iconAnchor: [12,12] });
+        const icon = window.L.divIcon({ className: "ohgo-cam-pin", html: starred.has(c.id) ? "📷⭐" : "📷", iconSize: [28,24], iconAnchor: [14,12] });
         const m = window.L.marker([c.latitude, c.longitude], { icon }).addTo(map);
         m.bindPopup(`<img src="${url}" style="max-width:200px"><br>${c.location}<br><button onclick="window.__ohgoView && window.__ohgoView('${url}','${c.location.replace(/'/g,"")}')">View</button>`);
       }
@@ -1625,12 +1625,15 @@ const res = await fetchWithTimeout(
   }
 
   let ohgoCamsLoaded = [];
+  const starred = new Set(JSON.parse(localStorage.getItem("ohgoStarred") || "[]"));
+  const saveStarred = () => localStorage.setItem("ohgoStarred", JSON.stringify([...starred]));
   (async () => {
     els.ohgoCamSub.textContent = "Loading...";
     try {
       const lat = FALLBACK_COORDS.lat;
       const lon = FALLBACK_COORDS.lon;
       const cams = await fetchOhgoCamerasNear(lat, lon, 40);
+      cams.sort((a,b) => (starred.has(b.id)?1:0) - (starred.has(a.id)?1:0));
       ohgoCamsLoaded = cams;
       els.ohgoCamGrid.innerHTML = "";
       for (const c of cams) {
@@ -1650,9 +1653,18 @@ const res = await fetchWithTimeout(
         btn.className = "ghost";
         btn.textContent = "View";
         btn.addEventListener("click", () => viewer.open({ src: url, alt: url, label: c.location, altLabel: c.location }, false));
+        const star = document.createElement("button");
+        star.className = "ghost";
+        star.textContent = starred.has(c.id) ? "★" : "☆";
+        star.addEventListener("click", () => {
+          if (starred.has(c.id)) starred.delete(c.id); else starred.add(c.id);
+          saveStarred();
+          star.textContent = starred.has(c.id) ? "★" : "☆";
+        });
         card.appendChild(img);
         card.appendChild(label);
         card.appendChild(btn);
+        card.appendChild(star);
         els.ohgoCamGrid.appendChild(card);
       }
       els.ohgoCamSub.textContent = `${cams.length} cameras`;
