@@ -76,7 +76,8 @@ class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
                 self._send_forbidden()
                 return
             try:
-                with urllib.request.urlopen(target, timeout=10) as r:
+                req = urllib.request.Request(target, headers={"User-Agent": "Mozilla/5.0", "Referer": "https://ohgo.com/"})
+                with urllib.request.urlopen(req, timeout=10) as r:
                     data = r.read()
                     ctype = r.headers.get("Content-Type", "image/jpeg")
                 self.send_response(200)
