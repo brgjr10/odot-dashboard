@@ -1100,6 +1100,9 @@
                 document.head.appendChild(sc);
               });
             }
+            if (localStorage.getItem("ohgoMapView") === "map" && els.btnOhgoView) {
+              setTimeout(() => els.btnOhgoView.click(), 0);
+            }
             if (!els.ohgoMap._leaflet) {
               const m = window.L.map(els.ohgoMap).setView([cam.src ? FALLBACK_COORDS.lat : FALLBACK_COORDS.lat, FALLBACK_COORDS.lon], 10);
               window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors", referrerPolicy: "origin-when-cross-origin" }).addTo(m);
@@ -1330,12 +1333,14 @@
           els.ohgoCamGrid.style.display = "";
           els.btnOhgoView.textContent = "Map view";
           if (els.btnOhgoSat) els.btnOhgoSat.style.display = "none";
+          localStorage.setItem("ohgoMapView", "grid");
           return;
         }
         els.ohgoMap.style.display = "";
         els.ohgoCamGrid.style.display = "none";
         els.btnOhgoView.textContent = "Grid view";
         if (els.btnOhgoSat) els.btnOhgoSat.style.display = "";
+        localStorage.setItem("ohgoMapView", "map");
         if (!window.L) {
           await new Promise((resolve, reject) => {
             const sc = document.createElement("script");
