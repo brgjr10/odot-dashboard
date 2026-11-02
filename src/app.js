@@ -1730,7 +1730,7 @@ const res = await fetchWithTimeout(
           const url = v.largeUrl || v.smallUrl;
           if (!url) continue;
           try {
-            const res = await fetch(url, { cache: "no-store" });
+            const res = await fetch(url, { cache: "no-store", mode: "no-cors" });
             const blob = await res.blob();
             const prev = lastSize.get(c.id);
             if (prev !== undefined && prev === blob.size) {
