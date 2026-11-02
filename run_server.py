@@ -71,7 +71,8 @@ class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
             from urllib.parse import parse_qs
             qs = parse_qs(parsed.query)
             target = (qs.get("url") or [""])[0]
-            if not target.startswith("https://itscameras.dot.state.oh.us/"):
+            parsed_t = urllib.parse.urlsplit(target)
+            if parsed_t.scheme != "https" or parsed_t.hostname != "itscameras.dot.state.oh.us":
                 self._send_forbidden()
                 return
             try:
