@@ -1600,6 +1600,7 @@ const res = await fetchWithTimeout(
         els.btnOhgoView.textContent = "Map view";
         if (els.btnOhgoSat) els.btnOhgoSat.style.display = "none";
         localStorage.setItem("ohgoMapView","grid");
+        applyViewMode();
         return;
       }
       els.ohgoMap.style.display = "";
@@ -1607,6 +1608,7 @@ const res = await fetchWithTimeout(
       els.btnOhgoView.textContent = "Grid view";
       if (els.btnOhgoSat) els.btnOhgoSat.style.display = "";
       localStorage.setItem("ohgoMapView","map");
+      applyViewMode();
       if (!window.L) {
         await new Promise((resolve, reject) => {
           const sc = document.createElement("script");
