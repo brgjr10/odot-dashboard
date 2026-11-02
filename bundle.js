@@ -1378,6 +1378,13 @@
         searchResults.style.display = "block";
       });
     }
+    const backTop = document.getElementById("back-to-top");
+    if (backTop) {
+      window.addEventListener("scroll", () => {
+        backTop.style.display = window.scrollY > 200 ? "block" : "none";
+      });
+      backTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+    }
     (async () => {
       els.ohgoCamSub.textContent = "Loading...";
       try {
