@@ -1215,7 +1215,7 @@
       els.inpLon.value = String(settings.coords.lon);
       els.inpRefreshSeconds.value = String(settings.cameraRefreshSeconds);
       els.inpWeatherMinutes.value = String(settings.weatherRefreshMinutes);
-      els.inpCameras.value = JSON.stringify(settings.cameras, null, 2);
+      if (els.inpCameras) els.inpCameras.value = JSON.stringify(settings.cameras, null, 2);
       els.settingsDialog.showModal();
     }
     function closeSettings() {
@@ -1238,13 +1238,7 @@
         alert("Latitude/Longitude must be valid numbers.");
         return null;
       }
-      let camerasList;
-      try {
-        camerasList = JSON.parse(String(els.inpCameras.value || "[]"));
-      } catch {
-        alert("Cameras JSON is invalid.");
-        return null;
-      }
+      const camerasList = settings.cameras;
       return normalizeSettings(DEFAULT_SETTINGS, {
         apiKey,
         ohgoApiKey,
