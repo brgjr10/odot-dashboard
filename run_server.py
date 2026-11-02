@@ -89,7 +89,9 @@ class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 if self.command != "HEAD":
                     self.wfile.write(data)
-            except Exception:
+            except Exception as e:
+                import sys
+                sys.stderr.write("proxy error: " + repr(e) + "\n")
                 self._send_forbidden()
             return
         super().do_GET()
