@@ -1616,6 +1616,33 @@ const res = await fetchWithTimeout(
   let ohgoCamsLoaded = [];
   const starred = new Set(JSON.parse(localStorage.getItem("ohgoStarred") || "[]"));
   const saveStarred = () => localStorage.setItem("ohgoStarred", JSON.stringify([...starred]));
+  const searchInput = document.getElementById("cam-search");
+  const searchResults = document.getElementById("cam-search-results");
+  if (searchInput) {
+    searchInput.addEventListener("input", () => {
+      const q = searchInput.value.trim().toLowerCase();
+      if (!q) { searchResults.style.display = "none"; return; }
+      const matches = ohgoCamsLoaded.filter((c) => (c.location || "").toLowerCase().includes(q)).slice(0, 20);
+      searchResults.innerHTML = "";
+      if (!matches.length) { searchResults.style.display = "none"; return; }
+      for (const c of matches) {
+        const v = (c.cameraViews && c.cameraViews[0]) || {};
+        const url = v.largeUrl || v.smallUrl;
+        const item = document.createElement("div");
+        item.style.padding = "8px 12px";
+        item.style.cursor = "pointer";
+        item.textContent = c.location;
+        item.addEventListener("click", () => {
+          viewer.open({ id: c.id, src: url, alt: url, label: c.location, altLabel: c.location }, false);
+          searchResults.style.display = "none";
+          searchInput.value = "";
+        });
+        searchResults.appendChild(item);
+      }
+      searchResults.style.display = "block";
+    });
+  }
+
   (async () => {
     els.ohgoCamSub.textContent = "Loading...";
     try {
