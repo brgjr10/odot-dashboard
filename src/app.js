@@ -1588,8 +1588,7 @@ const res = await fetchWithTimeout(
         document.head.appendChild(link);
       }
       if (!els.ohgoMap._leaflet) {
-        const map = window.L.map(els.ohgoMap).setView([FALLBACK_COORDS.lat, FALLBACK_COORDS.lon], 10);
-        map.setMaxBounds([[38.4, -84.8],[42.3, -80.5]]);
+        const map = window.L.map(els.ohgoMap, { minZoom: 7, maxZoom: 14, maxBounds: [[38.4, -84.8],[42.3, -80.5]], maxBoundsViscosity: 1.0 }).setView([FALLBACK_COORDS.lat, FALLBACK_COORDS.lon], 10);
         window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           maxZoom: 19,
           attribution: "&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors",
@@ -1611,42 +1610,36 @@ const res = await fetchWithTimeout(
   }
 
   let ohgoCamsLoaded = [];
-  if (els.btnOhgoCams) {
-    els.btnOhgoCams.addEventListener("click", async () => {
-      els.btnOhgoCams.disabled = true;
-      els.ohgoCamSub.textContent = "Loading...";
-      try {
-        const lat = FALLBACK_COORDS.lat;
-        const lon = FALLBACK_COORDS.lon;
-        const cams = await fetchOhgoCamerasNear(lat, lon, 40);
-        ohgoCamsLoaded = cams;
-        ohgoCamsLoaded = cams;
-        els.ohgoCamGrid.innerHTML = "";
-        for (const c of cams) {
-          const v = (c.cameraViews && c.cameraViews[0]) || {};
-          const url = v.largeUrl || v.smallUrl;
-          if (!url) continue;
-          const card = document.createElement("div");
-          card.className = "cam-card";
-          const img = document.createElement("img");
-          img.src = url;
-          img.alt = c.location;
-          img.loading = "lazy";
-          const label = document.createElement("div");
-          label.className = "cam-card__label";
-          label.textContent = c.location;
-          card.appendChild(img);
-          card.appendChild(label);
-          els.ohgoCamGrid.appendChild(card);
-        }
-        els.ohgoCamSub.textContent = `${cams.length} cameras`;
-      } catch (e) {
-        els.ohgoCamSub.textContent = `Error: ${e.message}`;
-      } finally {
-        els.btnOhgoCams.disabled = false;
+  (async () => {
+    els.ohgoCamSub.textContent = "Loading...";
+    try {
+      const lat = FALLBACK_COORDS.lat;
+      const lon = FALLBACK_COORDS.lon;
+      const cams = await fetchOhgoCamerasNear(lat, lon, 40);
+      ohgoCamsLoaded = cams;
+      els.ohgoCamGrid.innerHTML = "";
+      for (const c of cams) {
+        const v = (c.cameraViews && c.cameraViews[0]) || {};
+        const url = v.largeUrl || v.smallUrl;
+        if (!url) continue;
+        const card = document.createElement("div");
+        card.className = "cam-card";
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = c.location;
+        img.loading = "lazy";
+        const label = document.createElement("div");
+        label.className = "cam-card__label";
+        label.textContent = c.location;
+        card.appendChild(img);
+        card.appendChild(label);
+        els.ohgoCamGrid.appendChild(card);
       }
-    });
-  }
+      els.ohgoCamSub.textContent = `${cams.length} cameras`;
+    } catch (e) {
+      els.ohgoCamSub.textContent = `Error: ${e.message}`;
+    }
+  })();
 
 
   els.btnUseFallback.addEventListener("click", () => {
