@@ -1321,45 +1321,6 @@
         }
       });
     }
-    if (els.btnOhgoView) {
-      els.btnOhgoView.addEventListener("click", async () => {
-        const showing = els.ohgoMap.style.display !== "none";
-        if (showing) {
-          els.ohgoMap.style.display = "none";
-          els.ohgoCamGrid.style.display = "";
-          els.btnOhgoView.textContent = "Map view";
-          return;
-        }
-        els.ohgoMap.style.display = "";
-        els.ohgoCamGrid.style.display = "none";
-        els.btnOhgoView.textContent = "Grid view";
-        if (!window.L) {
-          await new Promise((resolve, reject) => {
-            const sc = document.createElement("script");
-            sc.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
-            sc.onload = resolve;
-            sc.onerror = reject;
-            document.head.appendChild(sc);
-          });
-        }
-        if (!els.ohgoMap._leaflet) {
-          const map2 = window.L.map(els.ohgoMap).setView([FALLBACK_COORDS.lat, FALLBACK_COORDS.lon], 10);
-          window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map2);
-          els.ohgoMap._leaflet = map2;
-        }
-        const map = els.ohgoMap._leaflet;
-        map.eachLayer((l) => {
-          if (l instanceof window.L.Marker) map.removeLayer(l);
-        });
-        for (const c of ohgoCamsLoaded) {
-          const v = c.cameraViews && c.cameraViews[0] || {};
-          const url = v.largeUrl || v.smallUrl;
-          if (!url) continue;
-          const m = window.L.marker([c.latitude, c.longitude]).addTo(map);
-          m.bindPopup(`<img src="${url}" style="max-width:200px"><br>${c.location}`);
-        }
-      });
-    }
     els.btnUseFallback.addEventListener("click", () => {
       els.inpLat.value = String(FALLBACK_COORDS.lat);
       els.inpLon.value = String(FALLBACK_COORDS.lon);
