@@ -5,6 +5,7 @@ import os
 import socketserver
 import sys
 import urllib.parse
+import urllib.request
 import webbrowser
 
 # The server used to expose the whole repository on 0.0.0.0: /.git/config,
