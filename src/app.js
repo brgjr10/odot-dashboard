@@ -1392,7 +1392,7 @@ const res = await fetchWithTimeout(
   const viewer = createViewer({ getSettings: () => settings });
 
   const cameras = createCameraDashboard({
-    mountEl: els.camGrid,
+    mountEl: els.camGrid || document.createElement("div"),
     viewer,
     getSettings: () => settings,
     onAnyRefresh: () => {
