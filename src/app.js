@@ -1254,6 +1254,7 @@ const res = await fetchWithTimeout(
     const title = document.getElementById("viewer-title");
     const sub = document.getElementById("viewer-sub");
     const btnAlt = document.getElementById("btn-viewer-alt");
+    const btnMap = document.getElementById("btn-viewer-map");
 
     const btnZoomOut = document.getElementById("btn-zoom-out");
     const btnZoomIn = document.getElementById("btn-zoom-in");
@@ -1312,6 +1313,35 @@ const res = await fetchWithTimeout(
       localStorage.setItem("ohgoStarred", JSON.stringify([...starredSet]));
       btnAlt.textContent = starredSet.has(id) ? "★" : "☆";
     });
+    if (btnMap) {
+      btnMap.addEventListener("click", () => {
+        if (!state || !state.camera) return;
+        const cam = state.camera;
+        dialog.close();
+        // switch to map view
+        if (els.ohgoMap && els.ohgoMap.style.display === "none") {
+          els.ohgoMap.style.display = "";
+          els.ohgoCamGrid.style.display = "none";
+          if (els.btnOhgoView) els.btnOhgoView.textContent = "Grid view";
+        }
+        // ensure leaflet loaded
+        (async () => {
+          if (!window.L) {
+            await new Promise((res, rej) => { const sc=document.createElement("script"); sc.src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"; sc.onload=res; sc.onerror=rej; document.head.appendChild(sc); });
+          }
+          if (!els.ohgoMap._leaflet) {
+            const m = window.L.map(els.ohgoMap).setView([cam.src?FALLBACK_COORDS.lat:FALLBACK_COORDS.lat, FALLBACK_COORDS.lon], 10);
+            window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors", referrerPolicy: "origin-when-cross-origin" }).addTo(m);
+            m.setMaxBounds([[38.4,-84.8],[42.3,-80.5]]);
+            m.options.minZoom=7; m.options.maxZoom=14; m.setMaxBoundsViscosity(1.0);
+            els.ohgoMap._leaflet = m;
+          }
+          const map = els.ohgoMap._leaflet;
+          map.setView([cam.lat || cam.latitude, cam.lon || cam.longitude], 14);
+        })();
+      });
+    }
+    dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
 
     if (btnZoomOut) btnZoomOut.addEventListener("click", () => setZoom(zoom - 0.25));
     if (btnZoomIn) btnZoomIn.addEventListener("click", () => setZoom(zoom + 0.25));
@@ -1386,7 +1416,7 @@ const res = await fetchWithTimeout(
   }
 
   const viewer = createViewer({ getSettings: () => settings });
-  window.__ohgoView = (url, loc, id) => viewer.open({ id, src: url, alt: url, label: loc, altLabel: loc }, false);
+  window.__ohgoView = (url, loc, id, lat, lon) => viewer.open({ id, src: url, alt: url, label: loc, altLabel: loc, lat, lon }, false);
 
   const cameras = createCameraDashboard({
     mountEl: els.camGrid || document.createElement("div"),
@@ -1608,7 +1638,7 @@ const res = await fetchWithTimeout(
         if (!url) continue;
         const icon = window.L.divIcon({ className: "ohgo-cam-pin", html: starred.has(c.id) ? "📷⭐" : "📷", iconSize: [28,24], iconAnchor: [14,12] });
         const m = window.L.marker([c.latitude, c.longitude], { icon }).addTo(map);
-        m.bindPopup(`<img src="${url}" style="max-width:200px"><br>${c.location}<br><button onclick="window.__ohgoView && window.__ohgoView('${url}','${c.location.replace(/'/g,"")}','${c.id}')">View</button>`);
+        m.bindPopup(`<img src="${url}" style="max-width:200px"><br>${c.location}<br><button onclick="window.__ohgoView && window.__ohgoView('${url}','${c.location.replace(/'/g,"")}','${c.id}',${c.latitude},${c.longitude})">View</button>`);
       }
     });
   }
@@ -1633,7 +1663,7 @@ const res = await fetchWithTimeout(
         item.style.cursor = "pointer";
         item.textContent = c.location;
         item.addEventListener("click", () => {
-          viewer.open({ id: c.id, src: url, alt: url, label: c.location, altLabel: c.location }, false);
+          viewer.open({ id: c.id, src: url, alt: url, label: c.location, altLabel: c.location, lat: c.latitude, lon: c.longitude }, false);
           searchResults.style.display = "none";
           searchInput.value = "";
         });
@@ -1676,7 +1706,7 @@ const res = await fetchWithTimeout(
         const btn = document.createElement("button");
         btn.className = "ghost";
         btn.textContent = "View";
-        btn.addEventListener("click", () => viewer.open({ id: c.id, src: url, alt: url, label: c.location, altLabel: c.location }, false));
+        btn.addEventListener("click", () => viewer.open({ id: c.id, src: url, alt: url, label: c.location, altLabel: c.location, lat: c.latitude, lon: c.longitude }, false));
         const star = document.createElement("button");
         star.className = "ghost";
         star.textContent = starred.has(c.id) ? "★" : "☆";
