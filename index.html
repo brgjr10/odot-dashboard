@@ -6,7 +6,7 @@
     <meta name="color-scheme" content="dark" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://itscameras.dot.state.oh.us https://openweathermap.org; connect-src 'self' https://api.openweathermap.org https://publicapi.ohgo.com; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: blob: https://itscameras.dot.state.oh.us https://openweathermap.org https://*.tile.openstreetmap.org https://server.arcgisonline.com https://*.basemaps.cartocdn.com; connect-src 'self' https://api.openweathermap.org https://publicapi.ohgo.com https://itscameras.dot.state.oh.us; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
     />
     <title>ODOT Camera Dashboard + Weather</title>
     <link rel="manifest" href="./manifest.webmanifest" />
@@ -68,14 +68,18 @@
   </head>
 
   <body>
+    <button id="back-to-top" style="position:fixed;bottom:20px;left:20px;z-index:1000;padding:8px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.15);background:rgba(22,27,34,.6);backdrop-filter:blur(8px);color:#e6edf3;cursor:pointer;display:none;">↑ Top</button>
     <div id="app">
+      <div id="cam-search-wrap" style="position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:1000;width:320px;">
+        <input id="cam-search" type="text" placeholder="Search cameras..." style="width:100%;padding:8px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.15);background:rgba(22,27,34,.6);backdrop-filter:blur(8px);color:#e6edf3;outline:none;">
+        <div id="cam-search-results" style="position:absolute;top:100%;left:0;right:0;margin-top:6px;max-height:300px;overflow:auto;background:rgba(22,27,34,.85);backdrop-filter:blur(8px);border-radius:12px;border:1px solid rgba(255,255,255,.1);display:none;"></div>
+      </div>
       <header class="topbar">
         <div class="topbar__title">
           <h1>ODOT Cameras</h1>
           <div class="subtitle" id="subtitle">Akron / Cleveland area</div>
         </div>
         <div class="topbar__actions">
-          <button class="pill" id="btn-alt-all" type="button" aria-pressed="false">Alt all</button>
           <button class="pill" id="btn-pause" type="button" aria-pressed="false">Pause</button>
           <button class="pill" id="btn-settings" type="button">Settings</button>
         </div>
@@ -93,18 +97,27 @@
             </div>
           </div>
 
-          <div id="cam-grid" class="cam-grid" aria-live="polite"></div>
+          <section class="panel" aria-label="OHGO cameras">
+            <div class="panel__title">
+              <div>
+                <div class="panel__h" id="ohgo-cam-sub">-</div>
+              </div>
+            </div>
+            <div class="panel__body">
+              <div style="display:flex;gap:8px;margin-bottom:8px;">
+                <button class="ghost" id="btn-ohgo-view" type="button">Map view</button>
+                <button class="ghost" id="btn-ohgo-sat" type="button" style="display:none">Satellite</button>
+                <select id="view-mode" class="ghost">
+                  <option value="all">View all</option>
+                  <option value="starred">View starred only</option>
+                  <option value="hideStuck">View all (hide stuck)</option>
+                </select>
+              </div>
+              <div id="ohgo-cam-grid" class="cam-grid" aria-live="polite"></div>
+              <div id="ohgo-map" style="height:600px;display:none;border-radius:8px;overflow:hidden;"></div>
+            </div>
+          </section>
 
-<div class="panel camstats" aria-label="Camera status">
-  <div class="panel__title">
-    <div>
-      <div class="panel__h">Camera status</div>
-      <div class="panel__sub" id="camstatus-sub">-</div>
-    </div>
-    <button class="ghost" id="btn-retry-failed" type="button">Retry failed</button>
-  </div>
-  <div class="panel__body" id="camstatus-body"></div>
-</div>
         </section>
 
         <aside class="sidebar" aria-label="Weather sidebar">
@@ -239,11 +252,6 @@
             <input class="field__input" id="inp-weather-minutes" type="number" min="2" max="60" step="1" />
           </label>
 
-          <div class="field">
-            <span class="field__label">Cameras</span>
-            <div class="field__help">Edit the list below (JSON). Changes apply immediately.</div>
-            <textarea class="field__textarea" id="inp-cameras" rows="10" spellcheck="false"></textarea>
-          </div>
         </div>
 
         <div class="dialog__footer">
@@ -261,7 +269,8 @@
             <div class="viewer__sub" id="viewer-sub">-</div>
           </div>
           <div class="viewer__actions">
-            <button class="pill" id="btn-viewer-alt" type="button" aria-pressed="false">Alt</button>
+            <button class="pill" id="btn-viewer-alt" type="button" aria-pressed="false">☆</button>
+            <button class="pill" id="btn-viewer-map" type="button">Map</button>
             <button class="iconbtn" value="close" aria-label="Close" type="submit">X</button>
           </div>
         </div>

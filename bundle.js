@@ -367,11 +367,6 @@
         img.alt = camera.label;
         const actions = document.createElement("div");
         actions.className = "cam__actions";
-        const btnAlt = document.createElement("button");
-        btnAlt.className = "chip";
-        btnAlt.type = "button";
-        btnAlt.textContent = "ALT";
-        btnAlt.setAttribute("aria-pressed", "false");
         const btnView = document.createElement("button");
         btnView.className = "chip";
         btnView.type = "button";
@@ -383,7 +378,7 @@
         btnErr.textContent = "ERR";
         btnErr.title = "Image failed to load. Click to retry.";
         btnErr.hidden = true;
-        actions.append(btnAlt, btnView, btnErr);
+        actions.append(btnView, btnErr);
         const label = document.createElement("div");
         label.className = "cam__label";
         const labelLeft = document.createElement("div");
@@ -404,10 +399,8 @@
         }
         function setAlt(next) {
           usingAlt = Boolean(next);
-          btnAlt.setAttribute("aria-pressed", String(usingAlt));
           refresh();
         }
-        btnAlt.addEventListener("click", () => setAlt(!usingAlt));
         btnView.addEventListener("click", () => {
           viewer2.open(camera, usingAlt);
         });
@@ -854,6 +847,31 @@
       }
       return res.json();
     }
+    async function fetchOhgoCamerasNear(lat, lon, radiusMiles) {
+      const key = settings.ohgoApiKey;
+      if (!key) throw new Error("OHGO API key missing");
+      const all = [];
+      let page = 1;
+      while (page <= 20) {
+        const params = new URLSearchParams({ "page-size": "100", "api-key": key, page: String(page) });
+        const url = `https://publicapi.ohgo.com/api/v1/cameras?${params.toString()}`;
+        const res = await fetchWithTimeout(url, { headers: { Accept: "application/json" } });
+        if (!res.ok) throw new Error(`OHGO cameras error (${res.status})`);
+        const data = await res.json();
+        all.push(...data.results || []);
+        if (page >= (data.totalPageCount || 1)) break;
+        page++;
+      }
+      const toRad = (d) => d * Math.PI / 180;
+      const dist = (la1, lo1, la2, lo2) => {
+        const R = 3959;
+        const dLat = toRad(la2 - la1);
+        const dLon = toRad(lo2 - lo1);
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(la1)) * Math.cos(toRad(la2)) * Math.sin(dLon / 2) ** 2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      };
+      return all.filter((c) => dist(lat, lon, c.latitude, c.longitude) <= radiusMiles);
+    }
     async function fetchCurrentWeather({ coords, apiKey }) {
       const params = new URLSearchParams({
         lat: String(coords.lat),
@@ -972,6 +990,15 @@
       badgeRefresh: document.getElementById("badge-refresh"),
       badgeLast: document.getElementById("badge-last"),
       camGrid: document.getElementById("cam-grid"),
+      ohgoCamSub: document.getElementById("ohgo-cam-sub"),
+      ohgoCamGrid: document.getElementById("ohgo-cam-grid"),
+      btnOhgoCams: document.getElementById("btn-ohgo-cams"),
+      ohgoMap: document.getElementById("ohgo-map"),
+      btnOhgoView: document.getElementById("btn-ohgo-view"),
+      btnOhgoSat: document.getElementById("btn-ohgo-sat"),
+      viewMode: document.getElementById("view-mode"),
+      ohgoMap: document.getElementById("ohgo-map"),
+      btnOhgoView: document.getElementById("btn-ohgo-view"),
       camStatusSub: document.getElementById("camstatus-sub"),
       camStatusBody: document.getElementById("camstatus-body"),
       btnRetryFailed: document.getElementById("btn-retry-failed"),
@@ -1001,6 +1028,7 @@
       const title = document.getElementById("viewer-title");
       const sub = document.getElementById("viewer-sub");
       const btnAlt = document.getElementById("btn-viewer-alt");
+      const btnMap = document.getElementById("btn-viewer-map");
       const btnZoomOut = document.getElementById("btn-zoom-out");
       const btnZoomIn = document.getElementById("btn-zoom-in");
       const btnZoomReset = document.getElementById("btn-zoom-reset");
@@ -1044,10 +1072,53 @@
         imgWrap.scrollTop = 0;
       }
       btnAlt.addEventListener("click", () => {
-        if (!state) return;
-        state.usingAlt = !state.usingAlt;
-        btnAlt.setAttribute("aria-pressed", String(state.usingAlt));
-        render();
+        if (!state || !state.camera || !state.camera.id) return;
+        const id = state.camera.id;
+        const starredSet = new Set(JSON.parse(localStorage.getItem("ohgoStarred") || "[]"));
+        if (starredSet.has(id)) starredSet.delete(id);
+        else starredSet.add(id);
+        localStorage.setItem("ohgoStarred", JSON.stringify([...starredSet]));
+        btnAlt.textContent = starredSet.has(id) ? "★" : "☆";
+      });
+      if (btnMap) {
+        btnMap.addEventListener("click", () => {
+          if (!state || !state.camera) return;
+          const cam = state.camera;
+          dialog.close();
+          if (els.ohgoMap && els.ohgoMap.style.display === "none") {
+            els.ohgoMap.style.display = "";
+            els.ohgoCamGrid.style.display = "none";
+            if (els.btnOhgoView) els.btnOhgoView.textContent = "Grid view";
+          }
+          (async () => {
+            if (!window.L) {
+              await new Promise((res, rej) => {
+                const sc = document.createElement("script");
+                sc.src = "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js";
+                sc.onload = res;
+                sc.onerror = rej;
+                document.head.appendChild(sc);
+              });
+            }
+            if (localStorage.getItem("ohgoMapView") === "map" && els.btnOhgoView) {
+              setTimeout(() => els.btnOhgoView.click(), 0);
+            }
+            if (!els.ohgoMap._leaflet) {
+              const m = window.L.map(els.ohgoMap).setView([cam.src ? FALLBACK_COORDS.lat : FALLBACK_COORDS.lat, FALLBACK_COORDS.lon], 10);
+              window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors", referrerPolicy: "origin-when-cross-origin" }).addTo(m);
+              m.setMaxBounds([[38.4, -84.8], [42.3, -80.5]]);
+              m.options.minZoom = 7;
+              m.options.maxZoom = 14;
+              m.setMaxBoundsViscosity(1);
+              els.ohgoMap._leaflet = m;
+            }
+            const map = els.ohgoMap._leaflet;
+            map.setView([cam.lat || cam.latitude, cam.lon || cam.longitude], 14);
+          })();
+        });
+      }
+      dialog.addEventListener("click", (e) => {
+        if (e.target === dialog) dialog.close();
       });
       if (btnZoomOut) btnZoomOut.addEventListener("click", () => setZoom(zoom - 0.25));
       if (btnZoomIn) btnZoomIn.addEventListener("click", () => setZoom(zoom + 0.25));
@@ -1093,6 +1164,8 @@
         const usingAlt = state.usingAlt;
         title.textContent = usingAlt ? camera.altLabel : camera.label;
         sub.textContent = usingAlt ? "Alternate view" : "Primary view";
+        const starredSet = new Set(JSON.parse(localStorage.getItem("ohgoStarred") || "[]"));
+        btnAlt.textContent = camera && camera.id && starredSet.has(camera.id) ? "★" : "☆";
         img.alt = title.textContent;
         img.src = `${usingAlt ? camera.alt : camera.src}?t=${Date.now()}`;
       }
@@ -1110,8 +1183,9 @@
       };
     }
     const viewer = createViewer({ getSettings: () => settings });
+    window.__ohgoView = (url, loc, id, lat, lon) => viewer.open({ id, src: url, alt: url, label: loc, altLabel: loc, lat, lon }, false);
     const cameras = createCameraDashboard({
-      mountEl: els.camGrid,
+      mountEl: els.camGrid || document.createElement("div"),
       viewer,
       getSettings: () => settings,
       onAnyRefresh: () => {
@@ -1183,7 +1257,7 @@
       els.inpLon.value = String(settings.coords.lon);
       els.inpRefreshSeconds.value = String(settings.cameraRefreshSeconds);
       els.inpWeatherMinutes.value = String(settings.weatherRefreshMinutes);
-      els.inpCameras.value = JSON.stringify(settings.cameras, null, 2);
+      if (els.inpCameras) els.inpCameras.value = JSON.stringify(settings.cameras, null, 2);
       els.settingsDialog.showModal();
     }
     function closeSettings() {
@@ -1206,13 +1280,7 @@
         alert("Latitude/Longitude must be valid numbers.");
         return null;
       }
-      let camerasList;
-      try {
-        camerasList = JSON.parse(String(els.inpCameras.value || "[]"));
-      } catch {
-        alert("Cameras JSON is invalid.");
-        return null;
-      }
+      const camerasList = settings.cameras;
       return normalizeSettings(DEFAULT_SETTINGS, {
         apiKey,
         ohgoApiKey,
@@ -1234,12 +1302,14 @@
     cameras.start();
     renderCamStatus();
     window.setInterval(renderCamStatus, 1e3);
-    els.btnAltAll.addEventListener("click", () => {
-      const next = !cameras.getGlobalAlt();
-      cameras.setGlobalAlt(next);
-      els.btnAltAll.setAttribute("aria-pressed", String(next));
-      renderCamStatus();
-    });
+    if (els.btnAltAll) {
+      els.btnAltAll.addEventListener("click", () => {
+        const next = !cameras.getGlobalAlt();
+        cameras.setGlobalAlt(next);
+        els.btnAltAll.setAttribute("aria-pressed", String(next));
+        renderCamStatus();
+      });
+    }
     els.btnPause.addEventListener("click", () => {
       const next = !cameras.isPaused();
       cameras.setPaused(next);
@@ -1255,6 +1325,230 @@
         renderCamStatus();
       });
     }
+    if (els.btnOhgoView) {
+      els.btnOhgoView.addEventListener("click", async () => {
+        const showing = els.ohgoMap.style.display !== "none";
+        if (showing) {
+          els.ohgoMap.style.display = "none";
+          els.ohgoCamGrid.style.display = "";
+          els.btnOhgoView.textContent = "Map view";
+          if (els.btnOhgoSat) els.btnOhgoSat.style.display = "none";
+          localStorage.setItem("ohgoMapView", "grid");
+          applyViewMode();
+          return;
+        }
+        els.ohgoMap.style.display = "";
+        els.ohgoCamGrid.style.display = "none";
+        els.btnOhgoView.textContent = "Grid view";
+        if (els.btnOhgoSat) els.btnOhgoSat.style.display = "";
+        localStorage.setItem("ohgoMapView", "map");
+        applyViewMode();
+        if (!window.L) {
+          await new Promise((resolve, reject) => {
+            const sc = document.createElement("script");
+            sc.src = "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js";
+            sc.onload = resolve;
+            sc.onerror = reject;
+            document.head.appendChild(sc);
+          });
+          const link = document.createElement("link");
+          link.rel = "stylesheet";
+          link.href = "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css";
+          document.head.appendChild(link);
+        }
+        if (!els.ohgoMap._leaflet) {
+          const map2 = window.L.map(els.ohgoMap, { minZoom: 7, maxZoom: 14, maxBounds: [[38.4, -84.8], [42.3, -80.5]], maxBoundsViscosity: 1 }).setView([FALLBACK_COORDS.lat, FALLBACK_COORDS.lon], 10);
+          window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: "&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors",
+            referrerPolicy: "origin-when-cross-origin"
+          }).addTo(map2);
+          els.ohgoMap._leaflet = map2;
+        }
+        const map = els.ohgoMap._leaflet;
+        if (els.btnOhgoSat) {
+          els.btnOhgoSat.style.display = "";
+          els.btnOhgoSat.onclick = () => {
+            const sat = els.btnOhgoSat.textContent === "Satellite";
+            map.eachLayer((l) => {
+              if (!l._url) return;
+              map.removeLayer(l);
+            });
+            const url = sat ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+            const opts = sat ? { maxZoom: 19, attribution: "Tiles © Esri" } : { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors", referrerPolicy: "origin-when-cross-origin" };
+            window.L.tileLayer(url, opts).addTo(map);
+            els.btnOhgoSat.textContent = sat ? "Street" : "Satellite";
+          };
+        }
+        map.eachLayer((l) => {
+          if (l instanceof window.L.Marker) map.removeLayer(l);
+        });
+        for (const c of ohgoCamsLoaded) {
+          const v = c.cameraViews && c.cameraViews[0] || {};
+          const url = v.largeUrl || v.smallUrl;
+          if (!url) continue;
+          const icon = window.L.divIcon({ className: "ohgo-cam-pin", html: starred.has(c.id) ? "📷⭐" : "📷", iconSize: [28, 24], iconAnchor: [14, 12] });
+          const m = window.L.marker([c.latitude, c.longitude], { icon }).addTo(map);
+          mapMarkers.set(c.id, m);
+          m.bindPopup(`<img src="${url}" style="max-width:200px"><br>${c.location}<br><button onclick="window.__ohgoView && window.__ohgoView('${url}','${c.location.replace(/'/g, "")}','${c.id}',${c.latitude},${c.longitude})">View</button>`);
+        }
+      });
+    }
+    let ohgoCamsLoaded = [];
+    let viewMode = localStorage.getItem("ohgoViewMode") || "all";
+    const mapMarkers = /* @__PURE__ */ new Map();
+    const staleIds = /* @__PURE__ */ new Set();
+    const starred = new Set(JSON.parse(localStorage.getItem("ohgoStarred") || "[]"));
+    const saveStarred = () => localStorage.setItem("ohgoStarred", JSON.stringify([...starred]));
+    const searchInput = document.getElementById("cam-search");
+    const searchResults = document.getElementById("cam-search-results");
+    if (searchInput) {
+      searchInput.addEventListener("input", () => {
+        const q = searchInput.value.trim().toLowerCase();
+        if (!q) {
+          searchResults.style.display = "none";
+          return;
+        }
+        const matches = ohgoCamsLoaded.filter((c) => (c.location || "").toLowerCase().includes(q)).slice(0, 20);
+        searchResults.innerHTML = "";
+        if (!matches.length) {
+          searchResults.style.display = "none";
+          return;
+        }
+        for (const c of matches) {
+          const v = c.cameraViews && c.cameraViews[0] || {};
+          const url = v.largeUrl || v.smallUrl;
+          const item = document.createElement("div");
+          item.style.padding = "8px 12px";
+          item.style.cursor = "pointer";
+          item.textContent = c.location;
+          item.addEventListener("click", () => {
+            viewer.open({ id: c.id, src: url, alt: url, label: c.location, altLabel: c.location, lat: c.latitude, lon: c.longitude }, false);
+            searchResults.style.display = "none";
+            searchInput.value = "";
+          });
+          searchResults.appendChild(item);
+        }
+        searchResults.style.display = "block";
+      });
+    }
+    function applyViewMode() {
+      const cards = [...els.ohgoCamGrid.querySelectorAll(".cam-card")];
+      ohgoCamsLoaded.forEach((c, i) => {
+        let show = true;
+        if (viewMode === "starred" && !starred.has(c.id)) show = false;
+        if (viewMode === "hideStuck" && staleIds.has(c.id)) show = false;
+        if (cards[i]) cards[i].style.display = show ? "" : "none";
+        const m = mapMarkers.get(c.id);
+        if (m) {
+          if (show) {
+            if (!m._map && els.ohgoMap._leaflet) m.addTo(els.ohgoMap._leaflet);
+          } else {
+            if (m._map) m.remove();
+          }
+        }
+      });
+    }
+    if (els.viewMode) {
+      els.viewMode.value = viewMode;
+      els.viewMode.addEventListener("change", () => {
+        viewMode = els.viewMode.value;
+        localStorage.setItem("ohgoViewMode", viewMode);
+        applyViewMode();
+      });
+    }
+    const backTop = document.getElementById("back-to-top");
+    if (backTop) {
+      window.addEventListener("scroll", () => {
+        backTop.style.display = window.scrollY > 200 ? "block" : "none";
+      });
+      backTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+    }
+    (async () => {
+      els.ohgoCamSub.textContent = "Loading...";
+      try {
+        const lat = FALLBACK_COORDS.lat;
+        const lon = FALLBACK_COORDS.lon;
+        const cams = await fetchOhgoCamerasNear(lat, lon, 40);
+        cams.sort((a, b) => (starred.has(b.id) ? 1 : 0) - (starred.has(a.id) ? 1 : 0));
+        ohgoCamsLoaded = cams;
+        els.ohgoCamGrid.innerHTML = "";
+        for (const c of cams) {
+          const v = c.cameraViews && c.cameraViews[0] || {};
+          const url = v.largeUrl || v.smallUrl;
+          if (!url) continue;
+          const card = document.createElement("div");
+          card.className = "cam-card";
+          const img = document.createElement("img");
+          img.src = url;
+          img.alt = c.location;
+          img.loading = "lazy";
+          const label = document.createElement("div");
+          label.className = "cam-card__label";
+          label.textContent = c.location;
+          const btn = document.createElement("button");
+          btn.className = "ghost";
+          btn.textContent = "View";
+          btn.addEventListener("click", () => viewer.open({ id: c.id, src: url, alt: url, label: c.location, altLabel: c.location, lat: c.latitude, lon: c.longitude }, false));
+          const star = document.createElement("button");
+          star.className = "ghost";
+          star.textContent = starred.has(c.id) ? "★" : "☆";
+          star.addEventListener("click", () => {
+            if (starred.has(c.id)) starred.delete(c.id);
+            else starred.add(c.id);
+            saveStarred();
+            star.textContent = starred.has(c.id) ? "★" : "☆";
+          });
+          card.appendChild(img);
+          card.appendChild(label);
+          card.appendChild(btn);
+          card.appendChild(star);
+          els.ohgoCamGrid.appendChild(card);
+        }
+        els.ohgoCamSub.textContent = `${cams.length} cameras`;
+        const lastSize = /* @__PURE__ */ new Map();
+        const staleCount = /* @__PURE__ */ new Map();
+        setInterval(async () => {
+          for (const c of ohgoCamsLoaded) {
+            const v = c.cameraViews && c.cameraViews[0] || {};
+            const url = v.largeUrl || v.smallUrl;
+            if (!url) continue;
+            try {
+              const res = await fetch("/proxy?url=" + encodeURIComponent(url), { cache: "no-store" });
+              const blob = await res.blob();
+              const prev = lastSize.get(c.id);
+              if (prev !== void 0 && prev === blob.size) {
+                staleCount.set(c.id, (staleCount.get(c.id) || 0) + 1);
+              } else {
+                staleCount.set(c.id, 0);
+              }
+              lastSize.set(c.id, blob.size);
+              const img = [...els.ohgoCamGrid.querySelectorAll(".cam-card img")][ohgoCamsLoaded.indexOf(c)];
+              if (img) {
+                img.src = url + "?t=" + Date.now();
+                const isStale = (staleCount.get(c.id) || 0) >= 2;
+                if (isStale) {
+                  img.classList.add("stale");
+                  staleIds.add(c.id);
+                } else {
+                  img.classList.remove("stale");
+                  staleIds.delete(c.id);
+                }
+                const m = mapMarkers.get(c.id);
+                if (m) {
+                  const icon = window.L.divIcon({ className: isStale ? "ohgo-cam-pin stale-pin" : "ohgo-cam-pin", html: starred.has(c.id) ? "📷⭐" : "📷", iconSize: [28, 24], iconAnchor: [14, 12] });
+                  m.setIcon(icon);
+                }
+                applyViewMode();
+              }
+            } catch {
+            }
+          }
+        }, 15e3);
+      } catch (e) {
+        els.ohgoCamSub.textContent = `Error: ${e.message}`;
+      }
+    })();
     els.btnUseFallback.addEventListener("click", () => {
       els.inpLat.value = String(FALLBACK_COORDS.lat);
       els.inpLon.value = String(FALLBACK_COORDS.lon);
