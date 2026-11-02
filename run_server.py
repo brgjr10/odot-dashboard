@@ -27,8 +27,8 @@ SECURITY_HEADERS = {
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "no-referrer",
     "Content-Security-Policy": (
-        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
-        "img-src 'self' data: blob: https://itscameras.dot.state.oh.us https://openweathermap.org; "
+        "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        "img-src 'self' data: blob: https://itscameras.dot.state.oh.us https://openweathermap.org https://*.tile.openstreetmap.org; "
         "connect-src 'self' https://api.openweathermap.org https://publicapi.ohgo.com; "
         "object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
     ),
