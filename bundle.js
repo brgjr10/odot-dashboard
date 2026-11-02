@@ -1520,6 +1520,11 @@
                   img.classList.remove("stale");
                   staleIds.delete(c.id);
                 }
+                const m = mapMarkers.get(c.id);
+                if (m) {
+                  const icon = window.L.divIcon({ className: isStale ? "ohgo-cam-pin stale-pin" : "ohgo-cam-pin", html: starred.has(c.id) ? "📷⭐" : "📷", iconSize: [28, 24], iconAnchor: [14, 12] });
+                  m.setIcon(icon);
+                }
                 applyHideStuck();
               }
             } catch {

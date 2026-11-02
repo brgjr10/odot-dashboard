@@ -1769,6 +1769,11 @@ const res = await fetchWithTimeout(
               img.src = url + "?t=" + Date.now();
               const isStale = (staleCount.get(c.id) || 0) >= 2;
               if (isStale) { img.classList.add("stale"); staleIds.add(c.id); } else { img.classList.remove("stale"); staleIds.delete(c.id); }
+              const m = mapMarkers.get(c.id);
+              if (m) {
+                const icon = window.L.divIcon({ className: isStale ? "ohgo-cam-pin stale-pin" : "ohgo-cam-pin", html: starred.has(c.id) ? "📷⭐" : "📷", iconSize: [28,24], iconAnchor: [14,12] });
+                m.setIcon(icon);
+              }
               applyHideStuck();
             }
           } catch {}
