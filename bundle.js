@@ -399,7 +399,6 @@
         }
         function setAlt(next) {
           usingAlt = Boolean(next);
-          btnAlt.setAttribute("aria-pressed", String(usingAlt));
           refresh();
         }
         btnView.addEventListener("click", () => {
@@ -1027,7 +1026,7 @@
       const img = document.getElementById("viewer-img");
       const title = document.getElementById("viewer-title");
       const sub = document.getElementById("viewer-sub");
-      const btnAlt2 = document.getElementById("btn-viewer-alt");
+      const btnAlt = document.getElementById("btn-viewer-alt");
       const btnZoomOut = document.getElementById("btn-zoom-out");
       const btnZoomIn = document.getElementById("btn-zoom-in");
       const btnZoomReset = document.getElementById("btn-zoom-reset");
@@ -1070,14 +1069,14 @@
         imgWrap.scrollLeft = 0;
         imgWrap.scrollTop = 0;
       }
-      btnAlt2.addEventListener("click", () => {
+      btnAlt.addEventListener("click", () => {
         if (!state || !state.camera || !state.camera.id) return;
         const id = state.camera.id;
         const starredSet = new Set(JSON.parse(localStorage.getItem("ohgoStarred") || "[]"));
         if (starredSet.has(id)) starredSet.delete(id);
         else starredSet.add(id);
         localStorage.setItem("ohgoStarred", JSON.stringify([...starredSet]));
-        btnAlt2.textContent = starredSet.has(id) ? "★" : "☆";
+        btnAlt.textContent = starredSet.has(id) ? "★" : "☆";
       });
       if (btnZoomOut) btnZoomOut.addEventListener("click", () => setZoom(zoom - 0.25));
       if (btnZoomIn) btnZoomIn.addEventListener("click", () => setZoom(zoom + 0.25));
@@ -1124,7 +1123,7 @@
         title.textContent = usingAlt ? camera.altLabel : camera.label;
         sub.textContent = usingAlt ? "Alternate view" : "Primary view";
         const starredSet = new Set(JSON.parse(localStorage.getItem("ohgoStarred") || "[]"));
-        btnAlt2.textContent = camera && camera.id && starredSet.has(camera.id) ? "★" : "☆";
+        btnAlt.textContent = camera && camera.id && starredSet.has(camera.id) ? "★" : "☆";
         img.alt = title.textContent;
         img.src = `${usingAlt ? camera.alt : camera.src}?t=${Date.now()}`;
       }
@@ -1132,7 +1131,7 @@
       return {
         open(camera, usingAlt) {
           state = { camera, usingAlt: Boolean(usingAlt) };
-          btnAlt2.setAttribute("aria-pressed", String(state.usingAlt));
+          btnAlt.setAttribute("aria-pressed", String(state.usingAlt));
           setZoom(1);
           resetPan();
           render();

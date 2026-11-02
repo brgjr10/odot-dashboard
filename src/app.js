@@ -494,7 +494,6 @@ function refresh() {
 
       function setAlt(next) {
         usingAlt = Boolean(next);
-        btnAlt.setAttribute("aria-pressed", String(usingAlt));
         refresh();
       }
 
