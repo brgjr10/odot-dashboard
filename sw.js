@@ -3,7 +3,7 @@
 // at the orphaned module tree and omitted ./bundle.js, the only script the page
 // loads. CACHE carries the shell version so a new bundle evicts the old shell
 // instead of being served from it forever.
-const CACHE = "odot-dashboard-shell-v2";
+const CACHE = "odot-dashboard-shell-v3";
 const ASSETS = [
   "./",
   "./index.html",
