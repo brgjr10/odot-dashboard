@@ -1053,6 +1053,32 @@ try { window.focus(); } catch (err) { console.warn("[odot] window.focus() failed
     return res.json();
   }
 
+  async function fetchOhgoCamerasNear(lat, lon, radiusMiles) {
+    const key = settings.ohgoApiKey;
+    if (!key) throw new Error("OHGO API key missing");
+    const all = [];
+    let page = 1;
+    while (page <= 20) {
+      const params = new URLSearchParams({ "page-size": "100", "api-key": key, page: String(page) });
+      const url = `https://publicapi.ohgo.com/api/v1/cameras?${params.toString()}`;
+      const res = await fetchWithTimeout(url, { headers: { Accept: "application/json" } });
+      if (!res.ok) throw new Error(`OHGO cameras error (${res.status})`);
+      const data = await res.json();
+      all.push(...(data.results || []));
+      if (page >= (data.totalPageCount || 1)) break;
+      page++;
+    }
+    const toRad = (d) => (d * Math.PI) / 180;
+    const dist = (la1, lo1, la2, lo2) => {
+      const R = 3959;
+      const dLat = toRad(la2 - la1);
+      const dLon = toRad(lo2 - lo1);
+      const a = Math.sin(dLat/2)**2 + Math.cos(toRad(la1))*Math.cos(toRad(la2))*Math.sin(dLon/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    };
+    return all.filter((c) => dist(lat, lon, c.latitude, c.longitude) <= radiusMiles);
+  }
+
   async function fetchCurrentWeather({ coords, apiKey }) {
     const params = new URLSearchParams({
       lat: String(coords.lat),
@@ -1198,6 +1224,9 @@ const res = await fetchWithTimeout(
     badgeRefresh: document.getElementById("badge-refresh"),
     badgeLast: document.getElementById("badge-last"),
     camGrid: document.getElementById("cam-grid"),
+    ohgoCamSub: document.getElementById("ohgo-cam-sub"),
+    ohgoCamGrid: document.getElementById("ohgo-cam-grid"),
+    btnOhgoCams: document.getElementById("btn-ohgo-cams"),
     camStatusSub: document.getElementById("camstatus-sub"),
     camStatusBody: document.getElementById("camstatus-body"),
     btnRetryFailed: document.getElementById("btn-retry-failed"),
@@ -1527,6 +1556,41 @@ const res = await fetchWithTimeout(
     els.btnRetryFailed.addEventListener("click", () => {
       cameras.retryFailed();
       renderCamStatus();
+    });
+  }
+
+  if (els.btnOhgoCams) {
+    els.btnOhgoCams.addEventListener("click", async () => {
+      els.btnOhgoCams.disabled = true;
+      els.ohgoCamSub.textContent = "Loading...";
+      try {
+        const lat = FALLBACK_COORDS.lat;
+        const lon = FALLBACK_COORDS.lon;
+        const cams = await fetchOhgoCamerasNear(lat, lon, 40);
+        els.ohgoCamGrid.innerHTML = "";
+        for (const c of cams) {
+          const v = (c.cameraViews && c.cameraViews[0]) || {};
+          const url = v.largeUrl || v.smallUrl;
+          if (!url) continue;
+          const card = document.createElement("div");
+          card.className = "cam-card";
+          const img = document.createElement("img");
+          img.src = url;
+          img.alt = c.location;
+          img.loading = "lazy";
+          const label = document.createElement("div");
+          label.className = "cam-card__label";
+          label.textContent = c.location;
+          card.appendChild(img);
+          card.appendChild(label);
+          els.ohgoCamGrid.appendChild(card);
+        }
+        els.ohgoCamSub.textContent = `${cams.length} cameras`;
+      } catch (e) {
+        els.ohgoCamSub.textContent = `Error: ${e.message}`;
+      } finally {
+        els.btnOhgoCams.disabled = false;
+      }
     });
   }
 
