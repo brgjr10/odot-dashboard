@@ -1589,6 +1589,7 @@ const res = await fetchWithTimeout(
       }
       if (!els.ohgoMap._leaflet) {
         const map = window.L.map(els.ohgoMap).setView([FALLBACK_COORDS.lat, FALLBACK_COORDS.lon], 10);
+        map.setMaxBounds([[38.4, -84.8],[42.3, -80.5]]);
         window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           maxZoom: 19,
           attribution: "&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors",
