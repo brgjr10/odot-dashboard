@@ -1639,6 +1639,7 @@ const res = await fetchWithTimeout(
         if (!url) continue;
         const icon = window.L.divIcon({ className: "ohgo-cam-pin", html: starred.has(c.id) ? "📷⭐" : "📷", iconSize: [28,24], iconAnchor: [14,12] });
         const m = window.L.marker([c.latitude, c.longitude], { icon }).addTo(map);
+        mapMarkers.set(c.id, m);
         m.bindPopup(`<img src="${url}" style="max-width:200px"><br>${c.location}<br><button onclick="window.__ohgoView && window.__ohgoView('${url}','${c.location.replace(/'/g,"")}','${c.id}',${c.latitude},${c.longitude})">View</button>`);
       }
     });
@@ -1646,6 +1647,8 @@ const res = await fetchWithTimeout(
 
   let ohgoCamsLoaded = [];
   let hideStuck = false;
+  const mapMarkers = new Map();
+  const staleIds = new Set();
   const starred = new Set(JSON.parse(localStorage.getItem("ohgoStarred") || "[]"));
   const saveStarred = () => localStorage.setItem("ohgoStarred", JSON.stringify([...starred]));
   const searchInput = document.getElementById("cam-search");
@@ -1685,9 +1688,13 @@ const res = await fetchWithTimeout(
   function applyHideStuck() {
     const cards = [...els.ohgoCamGrid.querySelectorAll(".cam-card")];
     ohgoCamsLoaded.forEach((c, i) => {
-      const img = cards[i] && cards[i].querySelector("img");
-      const stuck = img && img.classList.contains("stale");
+      const stuck = staleIds.has(c.id);
       if (cards[i]) cards[i].style.display = (hideStuck && stuck) ? "none" : "";
+      const m = mapMarkers.get(c.id);
+      if (m) {
+        if (hideStuck && stuck) { if (m._map) m.remove(); }
+        else { if (!m._map && els.ohgoMap._leaflet) m.addTo(els.ohgoMap._leaflet); }
+      }
     });
   }
 
@@ -1760,7 +1767,8 @@ const res = await fetchWithTimeout(
             const img = [...els.ohgoCamGrid.querySelectorAll(".cam-card img")][ohgoCamsLoaded.indexOf(c)];
             if (img) {
               img.src = url + "?t=" + Date.now();
-              if ((staleCount.get(c.id) || 0) >= 2) img.classList.add("stale"); else img.classList.remove("stale");
+              const isStale = (staleCount.get(c.id) || 0) >= 2;
+              if (isStale) { img.classList.add("stale"); staleIds.add(c.id); } else { img.classList.remove("stale"); staleIds.delete(c.id); }
               applyHideStuck();
             }
           } catch {}
