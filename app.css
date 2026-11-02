@@ -714,3 +714,6 @@ body {
 .cam-card__label { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .ohgo-cam-pin { font-size: 18px; line-height: 24px; text-align: center; }
+
+.cam-card img.stale { animation: redglow 1s ease-in-out infinite; }
+@keyframes redglow { 0%,100% { box-shadow: 0 0 6px 2px rgba(248,81,73,.4); } 50% { box-shadow: 0 0 14px 4px rgba(248,81,73,.9); } }

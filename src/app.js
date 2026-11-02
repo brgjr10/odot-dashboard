@@ -1722,6 +1722,32 @@ const res = await fetchWithTimeout(
         els.ohgoCamGrid.appendChild(card);
       }
       els.ohgoCamSub.textContent = `${cams.length} cameras`;
+      const lastSize = new Map();
+      const staleCount = new Map();
+      setInterval(async () => {
+        for (const c of ohgoCamsLoaded) {
+          const v = (c.cameraViews && c.cameraViews[0]) || {};
+          const url = v.largeUrl || v.smallUrl;
+          if (!url) continue;
+          try {
+            const res = await fetch(url, { cache: "no-store" });
+            const blob = await res.blob();
+            const prev = lastSize.get(c.id);
+            if (prev !== undefined && prev === blob.size) {
+              staleCount.set(c.id, (staleCount.get(c.id) || 0) + 1);
+            } else {
+              staleCount.set(c.id, 0);
+            }
+            lastSize.set(c.id, blob.size);
+            // update img src
+            const img = [...els.ohgoCamGrid.querySelectorAll(".cam-card img")][ohgoCamsLoaded.indexOf(c)];
+            if (img) {
+              img.src = url + "?t=" + Date.now();
+              if ((staleCount.get(c.id) || 0) >= 2) img.classList.add("stale"); else img.classList.remove("stale");
+            }
+          } catch {}
+        }
+      }, 15000);
     } catch (e) {
       els.ohgoCamSub.textContent = `Error: ${e.message}`;
     }

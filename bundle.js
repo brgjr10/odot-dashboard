@@ -1465,6 +1465,33 @@
           els.ohgoCamGrid.appendChild(card);
         }
         els.ohgoCamSub.textContent = `${cams.length} cameras`;
+        const lastSize = /* @__PURE__ */ new Map();
+        const staleCount = /* @__PURE__ */ new Map();
+        setInterval(async () => {
+          for (const c of ohgoCamsLoaded) {
+            const v = c.cameraViews && c.cameraViews[0] || {};
+            const url = v.largeUrl || v.smallUrl;
+            if (!url) continue;
+            try {
+              const res = await fetch(url, { cache: "no-store" });
+              const blob = await res.blob();
+              const prev = lastSize.get(c.id);
+              if (prev !== void 0 && prev === blob.size) {
+                staleCount.set(c.id, (staleCount.get(c.id) || 0) + 1);
+              } else {
+                staleCount.set(c.id, 0);
+              }
+              lastSize.set(c.id, blob.size);
+              const img = [...els.ohgoCamGrid.querySelectorAll(".cam-card img")][ohgoCamsLoaded.indexOf(c)];
+              if (img) {
+                img.src = url + "?t=" + Date.now();
+                if ((staleCount.get(c.id) || 0) >= 2) img.classList.add("stale");
+                else img.classList.remove("stale");
+              }
+            } catch {
+            }
+          }
+        }, 15e3);
       } catch (e) {
         els.ohgoCamSub.textContent = `Error: ${e.message}`;
       }
