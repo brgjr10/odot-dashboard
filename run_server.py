@@ -65,6 +65,33 @@ def resolve_request_path(url_path: str) -> str:
 class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
     server_version = "OdotDashboard/1.0"
 
+    def do_GET(self):
+        parsed = urllib.parse.urlsplit(self.path)
+        if parsed.path == "/proxy":
+            from urllib.parse import parse_qs
+            qs = parse_qs(parsed.query)
+            target = (qs.get("url") or [""])[0]
+            if not target.startswith("https://itscameras.dot.state.oh.us/"):
+                self._send_forbidden()
+                return
+            try:
+                with urllib.request.urlopen(target, timeout=10) as r:
+                    data = r.read()
+                    ctype = r.headers.get("Content-Type", "image/jpeg")
+                self.send_response(200)
+                self.send_header("Content-Type", ctype)
+                self.send_header("Content-Length", str(len(data)))
+                self.send_header("Access-Control-Allow-Origin", "*")
+                for name, value in SECURITY_HEADERS.items():
+                    self.send_header(name, value)
+                self.end_headers()
+                if self.command != "HEAD":
+                    self.wfile.write(data)
+            except Exception:
+                self._send_forbidden()
+            return
+        super().do_GET()
+
     def _send_forbidden(self) -> None:
         body = b"Forbidden\n"
         self.send_response(403)
