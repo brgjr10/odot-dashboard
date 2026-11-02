@@ -1314,7 +1314,7 @@
         }
         if (!els.ohgoMap._leaflet) {
           const map2 = window.L.map(els.ohgoMap).setView([FALLBACK_COORDS.lat, FALLBACK_COORDS.lon], 10);
-          window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map2);
+          window.L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Tiles © Esri" }).addTo(map2);
           els.ohgoMap._leaflet = map2;
         }
         const map = els.ohgoMap._leaflet;
