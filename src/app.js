@@ -1561,12 +1561,14 @@ const res = await fetchWithTimeout(
   window.setInterval(renderCamStatus, 1000);
 
   // Wire buttons
-  els.btnAltAll.addEventListener("click", () => {
-    const next = !cameras.getGlobalAlt();
-    cameras.setGlobalAlt(next);
-    els.btnAltAll.setAttribute("aria-pressed", String(next));
-    renderCamStatus();
-  });
+  if (els.btnAltAll) {
+    els.btnAltAll.addEventListener("click", () => {
+      const next = !cameras.getGlobalAlt();
+      cameras.setGlobalAlt(next);
+      els.btnAltAll.setAttribute("aria-pressed", String(next));
+      renderCamStatus();
+    });
+  }
 
   els.btnPause.addEventListener("click", () => {
     const next = !cameras.isPaused();
