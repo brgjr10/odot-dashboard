@@ -1221,6 +1221,7 @@ const res = await fetchWithTimeout(
     ohgoMap: document.getElementById("ohgo-map"),
     btnOhgoView: document.getElementById("btn-ohgo-view"),
     btnOhgoSat: document.getElementById("btn-ohgo-sat"),
+    btnHideStuck: document.getElementById("btn-hide-stuck"),
     ohgoMap: document.getElementById("ohgo-map"),
     btnOhgoView: document.getElementById("btn-ohgo-view"),
     camStatusSub: document.getElementById("camstatus-sub"),
@@ -1644,6 +1645,7 @@ const res = await fetchWithTimeout(
   }
 
   let ohgoCamsLoaded = [];
+  let hideStuck = false;
   const starred = new Set(JSON.parse(localStorage.getItem("ohgoStarred") || "[]"));
   const saveStarred = () => localStorage.setItem("ohgoStarred", JSON.stringify([...starred]));
   const searchInput = document.getElementById("cam-search");
@@ -1670,6 +1672,22 @@ const res = await fetchWithTimeout(
         searchResults.appendChild(item);
       }
       searchResults.style.display = "block";
+    });
+  }
+
+  if (els.btnHideStuck) {
+    els.btnHideStuck.addEventListener("click", () => {
+      hideStuck = !hideStuck;
+      els.btnHideStuck.textContent = hideStuck ? "Show all" : "Hide stuck";
+      applyHideStuck();
+    });
+  }
+  function applyHideStuck() {
+    const cards = [...els.ohgoCamGrid.querySelectorAll(".cam-card")];
+    ohgoCamsLoaded.forEach((c, i) => {
+      const img = cards[i] && cards[i].querySelector("img");
+      const stuck = img && img.classList.contains("stale");
+      if (cards[i]) cards[i].style.display = (hideStuck && stuck) ? "none" : "";
     });
   }
 
@@ -1743,6 +1761,7 @@ const res = await fetchWithTimeout(
             if (img) {
               img.src = url + "?t=" + Date.now();
               if ((staleCount.get(c.id) || 0) >= 2) img.classList.add("stale"); else img.classList.remove("stale");
+              applyHideStuck();
             }
           } catch {}
         }
