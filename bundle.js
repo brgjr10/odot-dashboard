@@ -1329,7 +1329,8 @@
           const v = c.cameraViews && c.cameraViews[0] || {};
           const url = v.largeUrl || v.smallUrl;
           if (!url) continue;
-          const m = window.L.marker([c.latitude, c.longitude]).addTo(map);
+          const icon = window.L.divIcon({ className: "ohgo-cam-pin", html: "📷", iconSize: [24, 24], iconAnchor: [12, 12] });
+          const m = window.L.marker([c.latitude, c.longitude], { icon }).addTo(map);
           m.bindPopup(`<img src="${url}" style="max-width:200px"><br>${c.location}`);
         }
       });
