@@ -1221,7 +1221,7 @@ const res = await fetchWithTimeout(
     ohgoMap: document.getElementById("ohgo-map"),
     btnOhgoView: document.getElementById("btn-ohgo-view"),
     btnOhgoSat: document.getElementById("btn-ohgo-sat"),
-    btnHideStuck: document.getElementById("btn-hide-stuck"),
+    viewMode: document.getElementById("view-mode"),
     ohgoMap: document.getElementById("ohgo-map"),
     btnOhgoView: document.getElementById("btn-ohgo-view"),
     camStatusSub: document.getElementById("camstatus-sub"),
@@ -1648,7 +1648,7 @@ const res = await fetchWithTimeout(
   }
 
   let ohgoCamsLoaded = [];
-  let hideStuck = false;
+  let viewMode = "all";
   const mapMarkers = new Map();
   const staleIds = new Set();
   const starred = new Set(JSON.parse(localStorage.getItem("ohgoStarred") || "[]"));
@@ -1680,23 +1680,24 @@ const res = await fetchWithTimeout(
     });
   }
 
-  if (els.btnHideStuck) {
-    els.btnHideStuck.addEventListener("click", () => {
-      hideStuck = !hideStuck;
-      els.btnHideStuck.textContent = hideStuck ? "Show all" : "Hide stuck";
-      applyHideStuck();
-    });
-  }
-  function applyHideStuck() {
+  function applyViewMode() {
     const cards = [...els.ohgoCamGrid.querySelectorAll(".cam-card")];
     ohgoCamsLoaded.forEach((c, i) => {
-      const stuck = staleIds.has(c.id);
-      if (cards[i]) cards[i].style.display = (hideStuck && stuck) ? "none" : "";
+      let show = true;
+      if (viewMode === "starred" && !starred.has(c.id)) show = false;
+      if (viewMode === "hideStuck" && staleIds.has(c.id)) show = false;
+      if (cards[i]) cards[i].style.display = show ? "" : "none";
       const m = mapMarkers.get(c.id);
       if (m) {
-        if (hideStuck && stuck) { if (m._map) m.remove(); }
-        else { if (!m._map && els.ohgoMap._leaflet) m.addTo(els.ohgoMap._leaflet); }
+        if (show) { if (!m._map && els.ohgoMap._leaflet) m.addTo(els.ohgoMap._leaflet); }
+        else { if (m._map) m.remove(); }
       }
+    });
+  }
+  if (els.viewMode) {
+    els.viewMode.addEventListener("change", () => {
+      viewMode = els.viewMode.value;
+      applyViewMode();
     });
   }
 
@@ -1776,7 +1777,7 @@ const res = await fetchWithTimeout(
                 const icon = window.L.divIcon({ className: isStale ? "ohgo-cam-pin stale-pin" : "ohgo-cam-pin", html: starred.has(c.id) ? "📷⭐" : "📷", iconSize: [28,24], iconAnchor: [14,12] });
                 m.setIcon(icon);
               }
-              applyHideStuck();
+              applyViewMode();
             }
           } catch {}
         }
