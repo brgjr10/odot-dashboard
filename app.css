@@ -708,3 +708,7 @@ body {
 
 
 
+
+.cam-card { display: flex; flex-direction: column; gap: 4px; }
+.cam-card img { width: 100%; height: 140px; object-fit: cover; border-radius: 6px; }
+.cam-card__label { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
