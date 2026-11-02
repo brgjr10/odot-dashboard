@@ -99,12 +99,14 @@
                 <div class="panel__h">OHGO Cameras (Akron area)</div>
                 <div class="panel__sub" id="ohgo-cam-sub">-</div>
               </div>
-              <button class="ghost" id="btn-ohgo-view" type="button">Map view</button>
-              <button class="ghost" id="btn-ohgo-sat" type="button" style="display:none">Satellite</button>
             </div>
             <div class="panel__body">
+              <div style="display:flex;gap:8px;margin-bottom:8px;">
+                <button class="ghost" id="btn-ohgo-view" type="button">Map view</button>
+                <button class="ghost" id="btn-ohgo-sat" type="button" style="display:none">Satellite</button>
+              </div>
               <div id="ohgo-cam-grid" class="cam-grid" aria-live="polite"></div>
-              <div id="ohgo-map" style="height:360px;display:none;margin-top:8px;border-radius:8px;overflow:hidden;"></div>
+              <div id="ohgo-map" style="height:360px;display:none;border-radius:8px;overflow:hidden;"></div>
             </div>
           </section>
 
