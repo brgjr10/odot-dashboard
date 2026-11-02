@@ -1229,6 +1229,8 @@ const res = await fetchWithTimeout(
     btnOhgoCams: document.getElementById("btn-ohgo-cams"),
     ohgoMap: document.getElementById("ohgo-map"),
     btnOhgoView: document.getElementById("btn-ohgo-view"),
+    ohgoMap: document.getElementById("ohgo-map"),
+    btnOhgoView: document.getElementById("btn-ohgo-view"),
     camStatusSub: document.getElementById("camstatus-sub"),
     camStatusBody: document.getElementById("camstatus-body"),
     btnRetryFailed: document.getElementById("btn-retry-failed"),
@@ -1561,6 +1563,47 @@ const res = await fetchWithTimeout(
     });
   }
 
+  if (els.btnOhgoView) {
+    els.btnOhgoView.addEventListener("click", async () => {
+      const showing = els.ohgoMap.style.display !== "none";
+      if (showing) {
+        els.ohgoMap.style.display = "none";
+        els.ohgoCamGrid.style.display = "";
+        els.btnOhgoView.textContent = "Map view";
+        return;
+      }
+      els.ohgoMap.style.display = "";
+      els.ohgoCamGrid.style.display = "none";
+      els.btnOhgoView.textContent = "Grid view";
+      if (!window.L) {
+        await new Promise((resolve, reject) => {
+          const sc = document.createElement("script");
+          sc.src = "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js";
+          sc.onload = resolve; sc.onerror = reject;
+          document.head.appendChild(sc);
+        });
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css";
+        document.head.appendChild(link);
+      }
+      if (!els.ohgoMap._leaflet) {
+        const map = window.L.map(els.ohgoMap).setView([FALLBACK_COORDS.lat, FALLBACK_COORDS.lon], 10);
+        window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
+        els.ohgoMap._leaflet = map;
+      }
+      const map = els.ohgoMap._leaflet;
+      map.eachLayer((l) => { if (l instanceof window.L.Marker) map.removeLayer(l); });
+      for (const c of ohgoCamsLoaded) {
+        const v = (c.cameraViews && c.cameraViews[0]) || {};
+        const url = v.largeUrl || v.smallUrl;
+        if (!url) continue;
+        const m = window.L.marker([c.latitude, c.longitude]).addTo(map);
+        m.bindPopup(`<img src="${url}" style="max-width:200px"><br>${c.location}`);
+      }
+    });
+  }
+
   let ohgoCamsLoaded = [];
   if (els.btnOhgoCams) {
     els.btnOhgoCams.addEventListener("click", async () => {
@@ -1570,6 +1613,7 @@ const res = await fetchWithTimeout(
         const lat = FALLBACK_COORDS.lat;
         const lon = FALLBACK_COORDS.lon;
         const cams = await fetchOhgoCamerasNear(lat, lon, 40);
+        ohgoCamsLoaded = cams;
         ohgoCamsLoaded = cams;
         els.ohgoCamGrid.innerHTML = "";
         for (const c of cams) {
